@@ -1,12 +1,12 @@
-// config.js - إعدادات الواجهة الأمامية الكاملة
+// config.js - إعدادات الواجهة الأمامية الكاملة (لـ VPS)
 
 // ==================== إعدادات التطبيق ====================
 
 // رابط التطبيق على Cloudflare Pages
 const APP_URL = 'https://rockytap-bot.elias-guerbas.workers.dev';
 
-// رابط API (Cloudflare Tunnel)
-const API_URL = 'https://wall-dozens-lounge-zone.trycloudflare.com/api';
+// رابط API على VPS (ثابت ولا يتغير)
+const API_URL = 'http://158.220.120.209:5000/api';
 
 // اسم البوت
 const BOT_USERNAME = 'Youlim5_bot';
@@ -104,8 +104,7 @@ async function apiCall(endpoint, data = null, method = 'GET') {
     const options = {
         method: method,
         headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true'
+            'Content-Type': 'application/json'
         }
     };
     
