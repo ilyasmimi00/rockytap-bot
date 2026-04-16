@@ -5,8 +5,8 @@
 // رابط التطبيق على Cloudflare Pages
 const APP_URL = 'https://rockytap-bot.elias-guerbas.workers.dev';
 
-// رابط API (خادم Flask)
-const API_URL = 'https://krista-arrhenotokous-superficially.ngrok-free.dev/api';
+// رابط API (Cloudflare Tunnel)
+const API_URL = 'https://wall-dozens-lounge-zone.trycloudflare.com/api';
 
 // اسم البوت
 const BOT_USERNAME = 'Youlim5_bot';
@@ -104,7 +104,8 @@ async function apiCall(endpoint, data = null, method = 'GET') {
     const options = {
         method: method,
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
         }
     };
     
@@ -176,6 +177,30 @@ async function getAds(userId) {
 
 async function claimAds(userId, points) {
     return await apiCall('claim_ads', { user_id: userId, points: points }, 'POST');
+}
+
+// ==================== دوال الإعلانات المدفوعة ====================
+
+async function getUserAds(userId) {
+    return await apiCall(`user_ads?user_id=${userId}`, null, 'GET');
+}
+
+async function createAd(userId, packageId, title, description, channelLink, monitorPeople) {
+    return await apiCall('create_ad', {
+        user_id: userId,
+        package_id: packageId,
+        title: title,
+        description: description,
+        channel_link: channelLink,
+        monitor_people: monitorPeople
+    }, 'POST');
+}
+
+async function verifyAdChannel(userId, adId) {
+    return await apiCall('verify_ad_channel', {
+        user_id: userId,
+        ad_id: adId
+    }, 'POST');
 }
 
 // ==================== دوال مساعدة ====================
@@ -334,6 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📍 BOT_USERNAME:', BOT_USERNAME);
 });
 
+// تصدير الدوال للاستخدام العالمي
 window.goTo = goTo;
 window.goBack = goBack;
 window.showAlert = showAlert;
@@ -352,6 +378,9 @@ window.completeTask = completeTask;
 window.redeemCode = redeemCode;
 window.getAds = getAds;
 window.claimAds = claimAds;
+window.getUserAds = getUserAds;
+window.createAd = createAd;
+window.verifyAdChannel = verifyAdChannel;
 window.formatNumber = formatNumber;
 window.formatDate = formatDate;
 window.updateUserUI = updateUserUI;
@@ -359,6 +388,7 @@ window.loadUserData = loadUserData;
 window.toggleLanguage = toggleLanguage;
 window.updateUILanguage = updateUILanguage;
 
+// متغيرات عامة
 window.BOT_USERNAME = BOT_USERNAME;
 window.APP_URL = APP_URL;
 window.API_URL = API_URL;
