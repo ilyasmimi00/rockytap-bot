@@ -2,73 +2,154 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>RockyTap - المهام</title>
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="config.js"></script>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
             font-family: 'Cairo', sans-serif;
-            padding: 15px;
+            min-height: 100vh;
+            padding: 0;
             padding-bottom: 80px;
-            color: white;
         }
-        .header {
+        .game-container { max-width: 450px; margin: 0 auto; }
+        
+        .header-custom {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            background: #0A0F1A;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
             padding: 12px 20px;
-            border-bottom: 1px solid #00BFFF;
+            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
             z-index: 1000;
-            text-align: center;
-        }
-        .header h3 { color: #00BFFF; margin: 0; }
-        .header-spacer { height: 60px; }
-        .task-card {
-            background: rgba(0, 191, 255, 0.1);
-            border: 1px solid #00BFFF;
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .task-card:hover { background: rgba(0, 191, 255, 0.2); }
-        .task-title { font-size: 18px; font-weight: bold; }
-        .task-reward { color: #FFD700; font-size: 13px; margin: 5px 0; }
-        .task-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 50px;
-            font-size: 11px;
-        }
-        .status-available { background: #00BFFF33; color: #00BFFF; }
-        .status-completed { background: #2ecc7133; color: #2ecc71; }
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #0A0F1A;
-            border-top: 1px solid #00BFFF;
-            padding: 10px;
-            display: flex;
-            justify-content: space-around;
             max-width: 450px;
             margin: 0 auto;
+            width: 100%;
+            border-radius: 0 !important;
         }
-        .nav-item {
-            text-align: center;
-            color: #666;
+        .header-spacer { height: 65px; }
+        
+        .logo-text {
+            background: linear-gradient(135deg, #00BFFF, #00CED1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        .icon-btn { 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            color: #aaa; 
+            margin-left: 15px;
+            background: transparent;
+            border: none;
+        }
+        .icon-btn:hover { color: #00BFFF; transform: scale(1.1); }
+        
+        .lang-btn {
+            background: rgba(0, 191, 255, 0.15);
+            border: 1px solid rgba(0, 191, 255, 0.3);
+            padding: 6px 12px;
             cursor: pointer;
             font-size: 12px;
+            color: #00BFFF;
+            transition: all 0.2s;
+            border-radius: 20px;
         }
-        .nav-item.active { color: #00BFFF; }
-        .nav-item i { font-size: 22px; display: block; }
+        
+        .page-title { text-align: center; padding: 20px; color: #00BFFF; font-size: 24px; font-weight: 800; }
+        
+        .tabs-container {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 16px;
+            gap: 12px;
+        }
+        .tab-btn {
+            flex: 1;
+            text-align: center;
+            padding: 12px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 60px;
+            color: #aaa;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #00BFFF, #0088aa);
+            color: white;
+        }
+        
+        .tab-content { display: none; padding: 20px 16px; }
+        .tab-content.active { display: block; }
+        
+        .tasks-list { display: flex; flex-direction: column; gap: 12px; }
+        .task-item {
+            background: linear-gradient(135deg, rgba(0, 20, 35, 0.7), rgba(0, 10, 20, 0.8));
+            border-radius: 20px;
+            padding: 15px;
+            border: 1px solid rgba(0, 191, 255, 0.25);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .task-item:hover { border-color: #00BFFF; transform: translateX(-5px); }
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .task-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .task-icon { font-size: 28px; }
+        .task-reward {
+            background: rgba(255, 215, 0, 0.15);
+            padding: 4px 10px;
+            border-radius: 50px;
+            color: #FFD700;
+            font-size: 12px;
+        }
+        .task-description {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 12px;
+        }
+        .task-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .task-status {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 50px;
+        }
+        .status-pending { background: rgba(255, 165, 0, 0.2); color: #FFA500; }
+        .status-completed { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+        .status-available { background: rgba(0, 191, 255, 0.2); color: #00BFFF; }
+        
         .modal {
             display: none;
             position: fixed;
@@ -76,24 +157,39 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0, 0, 0, 0.95);
             z-index: 2000;
             justify-content: center;
             align-items: center;
             padding: 20px;
         }
         .modal-content {
-            background: #0A0F1A;
+            background: linear-gradient(135deg, #0A0F1A, #05080F);
             border: 2px solid #00BFFF;
-            border-radius: 20px;
-            padding: 20px;
-            max-width: 350px;
+            border-radius: 24px;
+            max-width: 400px;
             width: 100%;
+            padding: 20px;
         }
-        .btn {
-            background: #00BFFF;
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+            padding-bottom: 10px;
+        }
+        .modal-close {
+            background: none;
             border: none;
-            padding: 10px;
+            color: #aaa;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .modal-btn {
+            background: linear-gradient(135deg, #00BFFF, #0088aa);
+            border: none;
+            padding: 12px;
             border-radius: 50px;
             color: white;
             font-weight: bold;
@@ -101,174 +197,286 @@
             width: 100%;
             margin-top: 10px;
         }
-        .btn-warning { background: #e67e22; }
-        .btn-success { background: #2ecc71; }
-        .close-btn {
-            float: left;
-            background: none;
-            border: none;
-            color: #aaa;
-            font-size: 24px;
-            cursor: pointer;
+        .modal-btn-warning {
+            background: linear-gradient(135deg, #e67e22, #d35400);
         }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 10px 20px;
+            border-top: 1px solid rgba(0, 191, 255, 0.2);
+            max-width: 450px;
+            margin: 0 auto;
+            width: 100%;
+            z-index: 1000;
+        }
+        .nav-item { text-align: center; color: #666; cursor: pointer; font-size: 11px; }
+        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: #00BFFF; }
+        
+        .scroll-content {
+            overflow-y: auto;
+            height: calc(100vh - 130px);
+            padding: 15px 0;
+        }
+        .loading, .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #aaa;
+        }
+        
+        .action-btn {
+            background: linear-gradient(135deg, #0f1a24, #0a0f1a);
+            border: 1px solid rgba(0, 191, 255, 0.25);
+            border-radius: 28px;
+            padding: 16px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .action-btn:hover { transform: translateY(-3px); border-color: #00BFFF; box-shadow: 0 10px 20px rgba(0, 191, 255, 0.2); }
+        .action-btn i { font-size: 32px; display: block; margin-bottom: 8px; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h3>📋 المهام</h3>
-</div>
-<div class="header-spacer"></div>
-
-<div class="container" id="tasksContainer">
-    <div style="text-align:center;padding:50px;color:#aaa;">جاري التحميل...</div>
-</div>
-
-<div class="bottom-nav">
-    <div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div>
-    <div class="nav-item active" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div>
-    <div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div>
-    <div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div>
-    <div class="nav-item" onclick="goTo('admin')"><i class="fas fa-crown"></i><div>أدمن</div></div>
+<div class="game-container">
+    <div class="header-custom">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <div class="logo-icon d-flex align-items-center justify-content-center" 
+                     style="width: 38px; height: 38px; background: linear-gradient(135deg, #00BFFF, #0088aa); border-radius: 10px;">
+                    <i class="fas fa-gamepad text-white"></i>
+                </div>
+                <span class="logo-text fw-bold fs-5">RockyTap</span>
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <button class="lang-btn" onclick="toggleLanguage()"><i class="fas fa-globe"></i> EN</button>
+                <i class="fas fa-wallet icon-btn" onclick="goTo('withdraw')"></i>
+                <i class="fas fa-bell icon-btn" onclick="showAlert('🔔 لا توجد إشعارات جديدة')"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="header-spacer"></div>
+    
+    <div class="scroll-content">
+        <div class="page-title">📋 المهام</div>
+        
+        <div class="tabs-container">
+            <button class="tab-btn active" data-tab="subscription"><i class="fab fa-telegram"></i> اشتراكات</button>
+            <button class="tab-btn" data-tab="daily"><i class="fas fa-calendar-day"></i> يومية</button>
+        </div>
+        
+        <div id="tab-subscription" class="tab-content active">
+            <div class="tasks-list" id="tasksList"><div class="loading">جاري التحميل...</div></div>
+        </div>
+        
+        <div id="tab-daily" class="tab-content">
+            <div class="tasks-list" id="dailyTasksList"><div class="empty-state">✨ قريباً...</div></div>
+        </div>
+        
+        <!-- زر إعلن -->
+        <div class="px-3 mb-4 mt-3">
+            <div class="action-btn text-center" onclick="goTo('ads_posting')">
+                <i class="fas fa-chart-line text-info"></i>
+                <div class="small text-white">📢 إعلن</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="taskModal" class="modal">
     <div class="modal-content">
-        <button class="close-btn" onclick="closeModal()">&times;</button>
-        <h3 id="modalTitle" style="color:#00BFFF;">المهمة</h3>
+        <div class="modal-header">
+            <h3 id="modalTitle" style="color:#00BFFF; margin:0;">المهمة</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
         <div id="modalBody"></div>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <div class="row text-center">
+        <div class="col"><div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div></div>
+        <div class="col"><div class="nav-item active" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('admin')"><i class="fas fa-crown"></i><div>أدمن</div></div></div>
     </div>
 </div>
 
 <script>
     let tg = null;
-    let userId = null;
+    let currentUserId = null;
+    let currentTask = null;
     
-    // المفتاح الموحد للمهام (نفس المفتاح المستخدم في admin.html)
-    const TASKS_STORAGE_KEY = 'all_tasks';
-    const COMPLETED_TASKS_KEY = 'completed_tasks';
-    
-    // تهيئة تليجرام
-    if (window.Telegram && window.Telegram.WebApp) {
-        tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.ready();
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            userId = tg.initDataUnsafe.user.id;
+    // تهيئة
+    function initTelegram() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            tg = window.Telegram.WebApp;
+            tg.expand();
+            tg.ready();
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                currentUserId = tg.initDataUnsafe.user.id;
+                window.currentUserId = currentUserId;
+            }
         }
-    }
-    if (!userId) userId = 8268443100;
-    
-    // تحميل المهام من localStorage (نفس المصدر)
-    function loadTasks() {
-        return JSON.parse(localStorage.getItem(TASKS_STORAGE_KEY) || '[]');
-    }
-    
-    // تحميل المهام المكتملة للمستخدم
-    function loadCompletedTasks() {
-        return JSON.parse(localStorage.getItem(`${COMPLETED_TASKS_KEY}_${userId}`) || '[]');
+        if (!currentUserId) {
+            currentUserId = localStorage.getItem('userId') || 8268443100;
+            window.currentUserId = currentUserId;
+        }
+        console.log('Tasks page - User ID:', currentUserId);
     }
     
-    // حفظ المهام المكتملة
-    function saveCompletedTasks(completed) {
-        localStorage.setItem(`${COMPLETED_TASKS_KEY}_${userId}`, JSON.stringify(completed));
+    // المهام
+    let tasks = [
+        { id: 1, title: "قناة RockyTap", description: "اشترك في القناة الرسمية", icon: "📺", channel_link: "https://t.me/RockyTap", channel_username: "@RockyTap", reward_points: 100, reward_ton: 0, status: "available" },
+        { id: 2, title: "قناة الأخبار", description: "تابع آخر الأخبار", icon: "📰", channel_link: "https://t.me/CryptoNews", channel_username: "@CryptoNews", reward_points: 150, reward_ton: 0.01, status: "available" },
+        { id: 3, title: "مجموعة المناقشات", description: "انضم إلى المجموعة", icon: "👥", channel_link: "https://t.me/RockyTapGroup", channel_username: "@RockyTapGroup", reward_points: 200, reward_ton: 0.02, status: "available" }
+    ];
+    
+    let completedTasks = JSON.parse(localStorage.getItem(`completed_tasks_${currentUserId}`) || '[]');
+    
+    function updateTasksStatus() {
+        for (let task of tasks) {
+            if (completedTasks.includes(task.id)) {
+                task.status = 'completed';
+            } else {
+                task.status = 'available';
+            }
+        }
+        renderTasks();
     }
     
-    // عرض المهام
     function renderTasks() {
-        const container = document.getElementById('tasksContainer');
-        if (!container) return;
-        
-        const tasks = loadTasks();
-        const completedTasks = loadCompletedTasks();
-        
-        if (tasks.length === 0) {
-            container.innerHTML = '<div style="text-align:center;padding:50px;color:#666;">لا توجد مهام حالياً</div>';
+        const container = document.getElementById('tasksList');
+        if (!tasks || tasks.length === 0) {
+            container.innerHTML = '<div class="empty-state">✨ لا توجد مهام متاحة حالياً</div>';
             return;
         }
         
         let html = '';
         for (let task of tasks) {
-            const isCompleted = completedTasks.includes(task.id);
-            let statusClass = isCompleted ? 'status-completed' : 'status-available';
-            let statusText = isCompleted ? '✓ مكتمل' : '📌 متاحة';
+            let statusClass = '', statusText = '';
+            if (task.status === 'completed') {
+                statusClass = 'status-completed';
+                statusText = '✓ مكتمل';
+            } else {
+                statusClass = 'status-available';
+                statusText = '📌 متاحة';
+            }
+            
+            let rewardText = '';
+            if (task.reward_points > 0) rewardText += `⭐ ${task.reward_points}`;
+            if (task.reward_ton > 0) {
+                if (rewardText) rewardText += ' + ';
+                rewardText += `💰 ${task.reward_ton}`;
+            }
             
             html += `
-                <div class="task-card" onclick="openTask(${task.id})">
-                    <div class="task-title">${task.icon || '📺'} ${task.title}</div>
-                    <div class="task-reward">⭐ ${task.reward_points} نقطة</div>
-                    <div><span class="task-status ${statusClass}">${statusText}</span></div>
+                <div class="task-item" onclick="openTask(${task.id})">
+                    <div class="task-header">
+                        <div class="task-title"><span class="task-icon">${task.icon || '📺'}</span> ${task.title}</div>
+                        <div class="task-reward">${rewardText}</div>
+                    </div>
+                    <div class="task-description">${task.description || 'اشترك في القناة واحصل على المكافأة'}</div>
+                    <div class="task-footer">
+                        <span class="task-status ${statusClass}">${statusText}</span>
+                    </div>
                 </div>
             `;
         }
         container.innerHTML = html;
     }
     
-    // فتح نافذة المهمة
     function openTask(taskId) {
-        const tasks = loadTasks();
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
-        
-        const completedTasks = loadCompletedTasks();
-        const isCompleted = completedTasks.includes(task.id);
         
         const modal = document.getElementById('taskModal');
         const modalTitle = document.getElementById('modalTitle');
         const modalBody = document.getElementById('modalBody');
         
-        modalTitle.innerText = task.title;
-        
-        if (isCompleted) {
-            modalBody.innerHTML = `
-                <div style="text-align:center;padding:20px;">
-                    <div style="font-size:48px;">✅</div>
-                    <p style="color:#2ecc71;">لقد حصلت على المكافأة بالفعل!</p>
-                    <button class="btn btn-success" onclick="closeModal()">إغلاق</button>
-                </div>
-            `;
-        } else {
-            modalBody.innerHTML = `
-                <div style="text-align:center;margin-bottom:20px;">
-                    <div style="font-size:48px;">${task.icon || '📺'}</div>
-                    <p style="color:#aaa;margin:10px 0;">${task.description || 'اشترك في القناة واحصل على المكافأة'}</p>
-                    <p style="color:#FFD700;">⭐ ${task.reward_points} نقطة</p>
-                </div>
-                <button class="btn" onclick="window.open('${task.channel_link}', '_blank')">🔗 اشتراك</button>
-                <button class="btn btn-warning" onclick="verifyTask(${task.id})">✅ تحقق</button>
-            `;
+        let rewardText = '';
+        if (task.reward_points > 0) rewardText += `⭐ ${task.reward_points} نقطة`;
+        if (task.reward_ton > 0) {
+            if (rewardText) rewardText += ' + ';
+            rewardText += `💰 ${task.reward_ton} تون`;
         }
+        
+        let isCompleted = task.status === 'completed';
+        
+        modalTitle.innerText = task.title;
+        modalBody.innerHTML = `
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="font-size:48px;">${task.icon || '📺'}</div>
+                <p style="color:#aaa;margin-top:10px;">${task.description || 'اشترك في القناة واحصل على المكافأة'}</p>
+            </div>
+            <div style="background:rgba(0,0,0,0.3);padding:15px;border-radius:16px;margin-bottom:15px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                    <span style="color:#aaa;">🎁 المكافأة:</span>
+                    <span style="color:#FFD700;">${rewardText}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                    <span style="color:#aaa;">🔗 القناة:</span>
+                    <span style="color:#00BFFF;">${task.channel_username || 'رابط القناة'}</span>
+                </div>
+            </div>
+            ${!isCompleted ? `<button class="modal-btn" onclick="window.open('${task.channel_link}', '_blank')">🔗 اشتراك</button>` : ''}
+            ${!isCompleted ? `<button class="modal-btn modal-btn-warning" onclick="verifyTask(${task.id})">✅ تحقق من الاشتراك</button>` : ''}
+            ${isCompleted ? `<div style="text-align:center;padding:15px;background:rgba(46,204,113,0.2);border-radius:16px;color:#2ecc71;">✅ لقد حصلت على المكافأة بالفعل!</div>` : ''}
+        `;
         
         modal.style.display = 'flex';
     }
     
-    // التحقق من المهمة
     function verifyTask(taskId) {
-        const tasks = loadTasks();
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
         
-        let completedTasks = loadCompletedTasks();
-        if (completedTasks.includes(task.id)) {
-            showAlert('⚠️ هذه المهمة مكتملة بالفعل!');
+        if (task.status === 'completed') {
+            showAlert('✅ لقد حصلت على المكافأة بالفعل!');
+            closeModal();
             return;
         }
         
-        showAlert('🔍 جاري التحقق...');
+        showAlert('🔍 جاري التحقق من اشتراكك...');
         
         setTimeout(() => {
-            // تسجيل المهمة كمكتملة
-            completedTasks.push(task.id);
-            saveCompletedTasks(completedTasks);
+            // إضافة المكافأة
+            let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
+            let currentTon = parseFloat(localStorage.getItem(`ton_${currentUserId}`) || '0');
             
-            // إضافة النقاط
-            let currentPoints = parseInt(localStorage.getItem(`points_${userId}`) || '0');
             currentPoints += task.reward_points;
-            localStorage.setItem(`points_${userId}`, currentPoints);
+            currentTon += task.reward_ton;
             
+            localStorage.setItem(`points_${currentUserId}`, currentPoints);
+            localStorage.setItem(`ton_${currentUserId}`, currentTon);
+            
+            // تسجيل المهمة كمكتملة
+            if (!completedTasks.includes(task.id)) {
+                completedTasks.push(task.id);
+                localStorage.setItem(`completed_tasks_${currentUserId}`, JSON.stringify(completedTasks));
+            }
+            
+            task.status = 'completed';
             renderTasks();
+            
+            let rewardText = '';
+            if (task.reward_points > 0) rewardText += `${task.reward_points} نقطة`;
+            if (task.reward_ton > 0) {
+                if (rewardText) rewardText += ' + ';
+                rewardText += `${task.reward_ton} تون`;
+            }
+            
+            showAlert(`🎉 مبروك! حصلت على ${rewardText}!`);
             closeModal();
-            showAlert(`🎉 مبروك! حصلت على ${task.reward_points} نقطة!`);
         }, 1000);
     }
     
@@ -290,6 +498,7 @@
             'tasks': 'tasks.html', 
             'wheel': 'wheel.html', 
             'ads': 'ads.html', 
+            'ads_posting': 'ads_posting.html',
             'withdraw': 'withdraw.html', 
             'referral': 'referral.html', 
             'giftcode': 'giftcode.html', 
@@ -298,12 +507,42 @@
         if (pages[page]) window.location.href = pages[page];
     }
     
-    // تهيئة الصفحة
-    renderTasks();
+    function toggleLanguage() {
+        let btn = document.querySelector('.lang-btn');
+        if (btn.innerHTML.includes('EN')) {
+            btn.innerHTML = '<i class="fas fa-globe"></i> عربي';
+            document.body.dir = 'rtl';
+        } else {
+            btn.innerHTML = '<i class="fas fa-globe"></i> EN';
+            document.body.dir = 'ltr';
+        }
+    }
+    
+    // التبويبات
+    function setupTabs() {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+            });
+        });
+    }
+    
+    // التهيئة
+    function init() {
+        initTelegram();
+        setupTabs();
+        updateTasksStatus();
+    }
+    
+    init();
     
     window.openTask = openTask;
     window.closeModal = closeModal;
     window.verifyTask = verifyTask;
+    window.toggleLanguage = toggleLanguage;
     window.goTo = goTo;
     window.showAlert = showAlert;
 </script>
