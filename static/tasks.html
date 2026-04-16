@@ -6,8 +6,6 @@
     <title>RockyTap - المهام</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- تأكد من أن مسار config.js صحيح -->
-    <script src="/config.js"></script>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -84,10 +82,6 @@
             gap: 5px;
             margin-right: 10px;
         }
-        .ad-btn-small:hover {
-            transform: scale(1.05);
-            opacity: 0.9;
-        }
         
         .page-title { 
             text-align: center; 
@@ -101,135 +95,92 @@
             gap: 10px;
         }
         
-        .tabs-container {
-            display: flex;
-            justify-content: space-around;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 8px 16px;
-            gap: 12px;
-        }
-        .tab-btn {
-            flex: 1;
-            text-align: center;
-            padding: 12px 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border: none;
-            border-radius: 60px;
-            color: #aaa;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .tab-btn.active {
-            background: linear-gradient(135deg, #00BFFF, #0088aa);
-            color: white;
-        }
+        .tasks-list { display: flex; flex-direction: column; gap: 12px; padding: 0 16px; }
         
-        .tab-content { display: none; padding: 20px 16px; }
-        .tab-content.active { display: block; }
-        
-        .tasks-list { display: flex; flex-direction: column; gap: 12px; }
-        .task-item {
+        .task-card {
             background: linear-gradient(135deg, rgba(0, 20, 35, 0.7), rgba(0, 10, 20, 0.8));
             border-radius: 20px;
             padding: 15px;
             border: 1px solid rgba(0, 191, 255, 0.25);
-            cursor: pointer;
             transition: all 0.3s;
         }
-        .task-item:hover { border-color: #00BFFF; transform: translateX(-5px); }
+        
         .task-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .task-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(0, 191, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .task-info {
+            flex: 1;
         }
         .task-title {
             font-size: 16px;
             font-weight: bold;
             color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
-        .task-icon { font-size: 28px; }
         .task-reward {
-            background: rgba(255, 215, 0, 0.15);
-            padding: 4px 10px;
-            border-radius: 50px;
+            font-size: 12px;
             color: #FFD700;
-            font-size: 12px;
+            margin-top: 4px;
         }
-        .task-description {
-            font-size: 12px;
-            color: #aaa;
-            margin-bottom: 12px;
-        }
-        .task-footer {
+        
+        .task-buttons {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
+            gap: 10px;
+            margin-top: 12px;
         }
+        .task-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        .btn-go {
+            background: linear-gradient(135deg, #00BFFF, #0088aa);
+            color: white;
+        }
+        .btn-verify {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            color: white;
+        }
+        .btn-completed {
+            background: #2ecc71;
+            color: white;
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .btn-pending {
+            background: #555;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        
         .task-status {
-            font-size: 11px;
+            display: inline-block;
             padding: 4px 10px;
             border-radius: 50px;
+            font-size: 10px;
+            margin-top: 8px;
         }
-        .status-pending { background: rgba(255, 165, 0, 0.2); color: #FFA500; }
-        .status-completed { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
-        .status-available { background: rgba(0, 191, 255, 0.2); color: #00BFFF; }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal-content {
-            background: linear-gradient(135deg, #0A0F1A, #05080F);
-            border: 2px solid #00BFFF;
-            border-radius: 24px;
-            max-width: 400px;
-            width: 100%;
-            padding: 20px;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
-            padding-bottom: 10px;
-        }
-        .modal-close {
-            background: none;
-            border: none;
-            color: #aaa;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        .modal-btn {
-            background: linear-gradient(135deg, #00BFFF, #0088aa);
-            border: none;
-            padding: 12px;
-            border-radius: 50px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .modal-btn-warning {
-            background: linear-gradient(135deg, #e67e22, #d35400);
-        }
+        .status-completed { background: #2ecc7133; color: #2ecc71; }
+        .status-pending { background: #f39c1233; color: #f39c12; }
+        .status-available { background: #00BFFF33; color: #00BFFF; }
         
         .bottom-nav {
             position: fixed;
@@ -244,8 +195,15 @@
             margin: 0 auto;
             width: 100%;
             z-index: 1000;
+            display: flex;
+            justify-content: space-around;
         }
-        .nav-item { text-align: center; color: #666; cursor: pointer; font-size: 11px; }
+        .nav-item {
+            text-align: center;
+            color: #666;
+            cursor: pointer;
+            font-size: 11px;
+        }
         .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
         .nav-item.active { color: #00BFFF; }
         
@@ -291,62 +249,44 @@
             </button>
         </div>
         
-        <div class="tabs-container">
-            <button class="tab-btn active" data-tab="subscription"><i class="fab fa-telegram"></i> اشتراكات</button>
-            <button class="tab-btn" data-tab="daily"><i class="fas fa-calendar-day"></i> يومية</button>
+        <div class="tasks-list" id="tasksList">
+            <div class="loading">📡 جاري التحميل...</div>
         </div>
-        
-        <div id="tab-subscription" class="tab-content active">
-            <div class="tasks-list" id="tasksList">
-                <div class="loading">📡 جاري التحميل...</div>
-            </div>
-        </div>
-        
-        <div id="tab-daily" class="tab-content">
-            <div class="tasks-list" id="dailyTasksList">
-                <div class="empty-state">✨ مهام يومية قريباً...</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="taskModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modalTitle" style="color:#00BFFF; margin:0;">المهمة</h3>
-            <button class="modal-close" onclick="closeModal()">&times;</button>
-        </div>
-        <div id="modalBody"></div>
     </div>
 </div>
 
 <div class="bottom-nav">
-    <div class="row text-center">
-        <div class="col"><div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div></div>
-        <div class="col"><div class="nav-item active" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div></div>
-        <div class="col"><div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div></div>
-        <div class="col"><div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div></div>
-        <div class="col"><div class="nav-item" onclick="goTo('admin')"><i class="fas fa-crown"></i><div>أدمن</div></div></div>
-    </div>
+    <div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div>
+    <div class="nav-item active" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div>
+    <div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div>
+    <div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div>
+    <div class="nav-item" onclick="goTo('admin')"><i class="fas fa-crown"></i><div>أدمن</div></div>
 </div>
 
 <script>
-    // تجنب إعادة تعريف tg
+    let tg = null;
     let currentUserId = null;
     let tasks = [];
-    let completedTasks = [];
+    let userTaskStatus = {}; // تخزين حالة كل مهمة للمستخدم
     
-    // رابط API مباشر (كد احتياطي)
-    const API_URL_DIRECT = 'http://158.220.120.209:5000/api';
+    // رابط API (سيتم تحديثه لاحقاً)
+    let API_URL = 'https://furthermore-specials-hospital-dirt.trycloudflare.com/api';
+    
+    // بيانات المهام الاحتياطية
+    const fallbackTasks = [
+        { id: 1, title: "قناة RockyTap", icon: "📺", channel_link: "https://t.me/RockyTap", channel_username: "@RockyTap", reward: 100 },
+        { id: 2, title: "قناة الأخبار", icon: "📰", channel_link: "https://t.me/CryptoNews", channel_username: "@CryptoNews", reward: 150 },
+        { id: 3, title: "مجموعة المناقشات", icon: "👥", channel_link: "https://t.me/RockyTapGroup", channel_username: "@RockyTapGroup", reward: 200 }
+    ];
     
     // تهيئة
     function initTelegram() {
         if (window.Telegram && window.Telegram.WebApp) {
-            const tgInstance = window.Telegram.WebApp;
-            tgInstance.expand();
-            tgInstance.ready();
-            if (tgInstance.initDataUnsafe && tgInstance.initDataUnsafe.user) {
-                currentUserId = tgInstance.initDataUnsafe.user.id;
+            tg = window.Telegram.WebApp;
+            tg.expand();
+            tg.ready();
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                currentUserId = tg.initDataUnsafe.user.id;
                 window.currentUserId = currentUserId;
             }
         }
@@ -357,78 +297,43 @@
         console.log('Tasks page - User ID:', currentUserId);
     }
     
-    // دالة API محلية (لا تعتمد على config.js)
-    async function callAPI(endpoint, data = null, method = 'GET') {
-        const url = `${API_URL_DIRECT}/${endpoint}`;
-        const options = {
-            method: method,
-            headers: { 'Content-Type': 'application/json' }
-        };
-        if (data && (method === 'POST' || method === 'PUT')) {
-            options.body = JSON.stringify(data);
-        }
-        try {
-            console.log(`📡 API Call: ${method} ${url}`);
-            const response = await fetch(url, options);
-            const result = await response.json();
-            console.log(`📡 API Response:`, result);
-            return result;
-        } catch (error) {
-            console.error('API Error:', error);
-            return { success: false, message: 'خطأ في الاتصال' };
-        }
-    }
-    
-    // بيانات احتياطية
-    function getFallbackTasks() {
-        return [
-            { id: 1, title: "قناة RockyTap", description: "اشترك في القناة الرسمية", icon: "📺", channel_link: "https://t.me/RockyTap", channel_username: "@RockyTap", reward: 100, reward_ton: 0, status: "available" },
-            { id: 2, title: "قناة الأخبار", description: "تابع آخر الأخبار", icon: "📰", channel_link: "https://t.me/CryptoNews", channel_username: "@CryptoNews", reward: 150, reward_ton: 0.01, status: "available" },
-            { id: 3, title: "مجموعة المناقشات", description: "انضم إلى المجموعة", icon: "👥", channel_link: "https://t.me/RockyTapGroup", channel_username: "@RockyTapGroup", reward: 200, reward_ton: 0.02, status: "available" }
-        ];
-    }
-    
     // تحميل المهام
-    async function loadTasksFromAPI() {
+    async function loadTasks() {
         const container = document.getElementById('tasksList');
         if (container) {
             container.innerHTML = '<div class="loading">📡 جاري التحميل...</div>';
         }
         
         try {
-            const result = await callAPI(`tasks?user_id=${currentUserId}`, null, 'GET');
+            const response = await fetch(`${API_URL}/tasks?user_id=${currentUserId}`);
+            const result = await response.json();
             
-            if (result && result.success && result.tasks && result.tasks.length > 0) {
+            if (result && result.success && result.tasks) {
                 tasks = result.tasks;
-                console.log('✅ Tasks loaded from API:', tasks.length);
             } else {
-                tasks = getFallbackTasks();
+                tasks = fallbackTasks;
             }
         } catch(e) {
             console.error('Error loading tasks:', e);
-            tasks = getFallbackTasks();
+            tasks = fallbackTasks;
         }
         
-        loadCompletedTasks();
+        // تحميل حالة المهام من localStorage
+        loadUserTaskStatus();
     }
     
-    function loadCompletedTasks() {
-        const saved = localStorage.getItem(`completed_tasks_${currentUserId}`);
+    function loadUserTaskStatus() {
+        const saved = localStorage.getItem(`task_status_${currentUserId}`);
         if (saved) {
-            completedTasks = JSON.parse(saved);
-        }
-        updateTasksStatus();
-    }
-    
-    function updateTasksStatus() {
-        for (let task of tasks) {
-            if (completedTasks.includes(task.id)) {
-                task.status = 'completed';
-            } else {
-                task.status = 'available';
-            }
+            userTaskStatus = JSON.parse(saved);
+        } else {
+            userTaskStatus = {};
         }
         renderTasks();
+    }
+    
+    function saveUserTaskStatus() {
+        localStorage.setItem(`task_status_${currentUserId}`, JSON.stringify(userTaskStatus));
     }
     
     function renderTasks() {
@@ -440,165 +345,167 @@
         
         let html = '';
         for (let task of tasks) {
-            let statusClass = '', statusText = '';
-            if (task.status === 'completed') {
-                statusClass = 'status-completed';
+            const status = userTaskStatus[task.id] || 'available';
+            let statusText = '';
+            let statusClass = '';
+            let buttonHtml = '';
+            
+            if (status === 'completed') {
                 statusText = '✓ مكتمل';
+                statusClass = 'status-completed';
+                buttonHtml = `<button class="task-btn btn-completed" disabled>✅ تم الإكمال</button>`;
+            } else if (status === 'pending') {
+                statusText = '⏳ قيد الانتظار';
+                statusClass = 'status-pending';
+                buttonHtml = `
+                    <button class="task-btn btn-verify" onclick="verifyTask(${task.id})">✅ تحقق</button>
+                `;
             } else {
-                statusClass = 'status-available';
                 statusText = '📌 متاحة';
+                statusClass = 'status-available';
+                buttonHtml = `
+                    <button class="task-btn btn-go" onclick="goToChannel(${task.id})">🔗 اذهب</button>
+                `;
             }
             
-            let rewardPoints = task.reward || task.reward_points || 0;
-            let rewardTon = task.reward_ton || 0;
-            
-            let rewardText = '';
-            if (rewardPoints > 0) rewardText += `⭐ ${rewardPoints}`;
-            if (rewardTon > 0) {
-                if (rewardText) rewardText += ' + ';
-                rewardText += `💰 ${rewardTon}`;
-            }
+            const rewardText = `⭐ ${task.reward} نقطة`;
             
             html += `
-                <div class="task-item" onclick="openTask(${task.id})">
+                <div class="task-card">
                     <div class="task-header">
-                        <div class="task-title"><span class="task-icon">${task.icon || '📺'}</span> ${task.title}</div>
-                        <div class="task-reward">${rewardText}</div>
+                        <div class="task-icon">${task.icon || '📺'}</div>
+                        <div class="task-info">
+                            <div class="task-title">${task.title}</div>
+                            <div class="task-reward">${rewardText}</div>
+                        </div>
                     </div>
-                    <div class="task-description">${task.description || 'اشترك في القناة واحصل على المكافأة'}</div>
-                    <div class="task-footer">
-                        <span class="task-status ${statusClass}">${statusText}</span>
+                    <div class="task-buttons">
+                        ${buttonHtml}
                     </div>
+                    <div class="task-status ${statusClass}">${statusText}</div>
                 </div>
             `;
         }
         container.innerHTML = html;
     }
     
-    function openTask(taskId) {
+    // الذهاب إلى القناة
+    function goToChannel(taskId) {
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
         
-        const modal = document.getElementById('taskModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
+        // تغيير الحالة إلى "قيد الانتظار"
+        userTaskStatus[taskId] = 'pending';
+        saveUserTaskStatus();
+        renderTasks();
         
-        let rewardPoints = task.reward || task.reward_points || 0;
-        let rewardTon = task.reward_ton || 0;
+        // فتح رابط القناة
+        const channelLink = task.channel_link || `https://t.me/${task.channel_username?.replace('@', '')}`;
+        window.open(channelLink, '_blank');
         
-        let rewardText = '';
-        if (rewardPoints > 0) rewardText += `⭐ ${rewardPoints} نقطة`;
-        if (rewardTon > 0) {
-            if (rewardText) rewardText += ' + ';
-            rewardText += `💰 ${rewardTon} تون`;
-        }
-        
-        let isCompleted = task.status === 'completed';
-        let channelLink = task.channel_link || `https://t.me/${task.channel_username?.replace('@', '')}`;
-        
-        modalTitle.innerText = task.title;
-        modalBody.innerHTML = `
-            <div style="text-align:center;margin-bottom:20px;">
-                <div style="font-size:48px;">${task.icon || '📺'}</div>
-                <p style="color:#aaa;margin-top:10px;">${task.description || 'اشترك في القناة واحصل على المكافأة'}</p>
-            </div>
-            <div style="background:rgba(0,0,0,0.3);padding:15px;border-radius:16px;margin-bottom:15px;">
-                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-                    <span style="color:#aaa;">🎁 المكافأة:</span>
-                    <span style="color:#FFD700;">${rewardText}</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;">
-                    <span style="color:#aaa;">🔗 القناة:</span>
-                    <span style="color:#00BFFF;">${task.channel_username || 'رابط القناة'}</span>
-                </div>
-            </div>
-            ${!isCompleted ? `<button class="modal-btn" onclick="window.open('${channelLink}', '_blank')">🔗 اشتراك</button>` : ''}
-            ${!isCompleted ? `<button class="modal-btn modal-btn-warning" onclick="verifyTask(${task.id})">✅ تحقق من الاشتراك</button>` : ''}
-            ${isCompleted ? `<div style="text-align:center;padding:15px;background:rgba(46,204,113,0.2);border-radius:16px;color:#2ecc71;">✅ لقد حصلت على المكافأة بالفعل!</div>` : ''}
-        `;
-        
-        modal.style.display = 'flex';
+        showAlert('🔗 تم فتح القناة. بعد الاشتراك، اضغط على زر "تحقق"');
     }
     
+    // التحقق من الاشتراك
     async function verifyTask(taskId) {
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
         
-        if (task.status === 'completed') {
+        if (userTaskStatus[taskId] === 'completed') {
             showAlert('✅ لقد حصلت على المكافأة بالفعل!');
-            closeModal();
             return;
         }
         
         showAlert('🔍 جاري التحقق من اشتراكك...');
         
-        let rewardPoints = task.reward || task.reward_points || 0;
-        let rewardTon = task.reward_ton || 0;
-        
         try {
-            const result = await callAPI('complete_task', {
-                user_id: currentUserId,
-                task_id: taskId,
-                reward: rewardPoints
-            }, 'POST');
+            // محاولة التحقق عبر API
+            const response = await fetch(`${API_URL}/verify_subscription`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    task_id: taskId,
+                    channel_username: task.channel_username
+                })
+            });
+            const result = await response.json();
             
             if (result && result.success) {
-                let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
-                currentPoints += rewardPoints;
-                localStorage.setItem(`points_${currentUserId}`, currentPoints);
-                
-                if (rewardTon > 0) {
-                    let currentTon = parseFloat(localStorage.getItem(`ton_${currentUserId}`) || '0');
-                    currentTon += rewardTon;
-                    localStorage.setItem(`ton_${currentUserId}`, currentTon);
-                }
-                
-                if (!completedTasks.includes(task.id)) {
-                    completedTasks.push(task.id);
-                    localStorage.setItem(`completed_tasks_${currentUserId}`, JSON.stringify(completedTasks));
-                }
-                
-                task.status = 'completed';
-                renderTasks();
-                closeModal();
-                showAlert(`🎉 مبروك! حصلت على ${rewardPoints} نقطة!`);
+                // منح المكافأة
+                await claimReward(taskId, task.reward);
             } else {
-                completeTaskLocally(task, rewardPoints, rewardTon);
+                // محاكاة التحقق (للتجربة)
+                simulateVerification(taskId, task);
             }
         } catch(e) {
-            completeTaskLocally(task, rewardPoints, rewardTon);
+            console.error('Error verifying:', e);
+            simulateVerification(taskId, task);
         }
     }
     
-    function completeTaskLocally(task, rewardPoints, rewardTon) {
-        let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
-        let currentTon = parseFloat(localStorage.getItem(`ton_${currentUserId}`) || '0');
+    function simulateVerification(taskId, task) {
+        showAlert('⚠️ تجريبي: تم التحقق بنجاح (محاكاة)');
         
-        currentPoints += rewardPoints;
-        currentTon += rewardTon;
-        
-        localStorage.setItem(`points_${currentUserId}`, currentPoints);
-        localStorage.setItem(`ton_${currentUserId}`, currentTon);
-        
-        if (!completedTasks.includes(task.id)) {
-            completedTasks.push(task.id);
-            localStorage.setItem(`completed_tasks_${currentUserId}`, JSON.stringify(completedTasks));
-        }
-        
-        task.status = 'completed';
-        renderTasks();
-        closeModal();
-        showAlert(`🎉 مبروك! حصلت على ${rewardPoints} نقطة!`);
+        setTimeout(() => {
+            claimReward(taskId, task.reward);
+        }, 1000);
     }
     
-    function closeModal() {
-        document.getElementById('taskModal').style.display = 'none';
+    async function claimReward(taskId, reward) {
+        try {
+            const response = await fetch(`${API_URL}/complete_task`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    task_id: taskId,
+                    reward: reward
+                })
+            });
+            const result = await response.json();
+            
+            if (result && result.success) {
+                // تحديث الرصيد المحلي
+                let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
+                currentPoints += reward;
+                localStorage.setItem(`points_${currentUserId}`, currentPoints);
+                
+                // تحديث حالة المهمة
+                userTaskStatus[taskId] = 'completed';
+                saveUserTaskStatus();
+                renderTasks();
+                
+                showAlert(`🎉 مبروك! حصلت على ${reward} نقطة!`);
+            } else {
+                // تحديث محلي حتى لو فشل API
+                let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
+                currentPoints += reward;
+                localStorage.setItem(`points_${currentUserId}`, currentPoints);
+                
+                userTaskStatus[taskId] = 'completed';
+                saveUserTaskStatus();
+                renderTasks();
+                
+                showAlert(`🎉 مبروك! حصلت على ${reward} نقطة!`);
+            }
+        } catch(e) {
+            // تحديث محلي
+            let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
+            currentPoints += reward;
+            localStorage.setItem(`points_${currentUserId}`, currentPoints);
+            
+            userTaskStatus[taskId] = 'completed';
+            saveUserTaskStatus();
+            renderTasks();
+            
+            showAlert(`🎉 مبروك! حصلت على ${reward} نقطة!`);
+        }
     }
     
     function showAlert(msg) {
-        const tgInstance = window.Telegram?.WebApp;
-        if (tgInstance && tgInstance.showAlert) {
-            tgInstance.showAlert(msg);
+        if (tg && tg.showAlert) {
+            tg.showAlert(msg);
         } else {
             alert(msg);
         }
@@ -632,27 +539,11 @@
         }
     }
     
-    function setupTabs() {
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
-            });
-        });
-    }
+    // التهيئة
+    initTelegram();
+    loadTasks();
     
-    async function init() {
-        initTelegram();
-        setupTabs();
-        await loadTasksFromAPI();
-    }
-    
-    init();
-    
-    window.openTask = openTask;
-    window.closeModal = closeModal;
+    window.goToChannel = goToChannel;
     window.verifyTask = verifyTask;
     window.toggleLanguage = toggleLanguage;
     window.goTo = goTo;

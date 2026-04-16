@@ -1,17 +1,1 @@
-# إعادة توجيه جميع الصفحات إلى نفسها
-/*    /index.html   200
-
-# منع إعادة توجيه الملفات الثابتة
-/ads.html           /ads.html           200
-/admin.html         /admin.html         200
-/giftcode.html      /giftcode.html      200
-/referral.html      /referral.html      200
-/tasks.html         /tasks.html         200
-/wheel.html         /wheel.html         200
-/withdraw.html      /withdraw.html      200
-/config.js          /config.js          200
-
-# تجاوز ملفات Bootstrap و Font Awesome
-/*.css              /.                  200
-/*.js               /.                  200
-/*.woff2            /.                  200
+/api/*  https://158.220.120.209:5000/api/:splat  200
