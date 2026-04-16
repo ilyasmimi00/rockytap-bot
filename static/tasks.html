@@ -69,7 +69,36 @@
             border-radius: 20px;
         }
         
-        .page-title { text-align: center; padding: 20px; color: #00BFFF; font-size: 24px; font-weight: 800; }
+        .ad-btn-small {
+            background: linear-gradient(135deg, #00BFFF, #0088aa);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 50px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-right: 10px;
+        }
+        .ad-btn-small:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+        
+        .page-title { 
+            text-align: center; 
+            padding: 20px; 
+            color: #00BFFF; 
+            font-size: 24px; 
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
         
         .tabs-container {
             display: flex;
@@ -229,18 +258,6 @@
             padding: 40px;
             color: #aaa;
         }
-        
-        .action-btn {
-            background: linear-gradient(135deg, #0f1a24, #0a0f1a);
-            border: 1px solid rgba(0, 191, 255, 0.25);
-            border-radius: 28px;
-            padding: 16px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .action-btn:hover { transform: translateY(-3px); border-color: #00BFFF; box-shadow: 0 10px 20px rgba(0, 191, 255, 0.2); }
-        .action-btn i { font-size: 32px; display: block; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -266,7 +283,12 @@
     <div class="header-spacer"></div>
     
     <div class="scroll-content">
-        <div class="page-title">📋 المهام</div>
+        <div class="page-title">
+            📋 المهام
+            <button class="ad-btn-small" onclick="goTo('ads_posting')">
+                <i class="fas fa-plus"></i> إعلن
+            </button>
+        </div>
         
         <div class="tabs-container">
             <button class="tab-btn active" data-tab="subscription"><i class="fab fa-telegram"></i> اشتراكات</button>
@@ -274,18 +296,14 @@
         </div>
         
         <div id="tab-subscription" class="tab-content active">
-            <div class="tasks-list" id="tasksList"><div class="loading">جاري التحميل...</div></div>
+            <div class="tasks-list" id="tasksList">
+                <div class="loading">📡 جاري التحميل...</div>
+            </div>
         </div>
         
         <div id="tab-daily" class="tab-content">
-            <div class="tasks-list" id="dailyTasksList"><div class="empty-state">✨ قريباً...</div></div>
-        </div>
-        
-        <!-- زر إعلن -->
-        <div class="px-3 mb-4 mt-3">
-            <div class="action-btn text-center" onclick="goTo('ads_posting')">
-                <i class="fas fa-chart-line text-info"></i>
-                <div class="small text-white">📢 إعلن</div>
+            <div class="tasks-list" id="dailyTasksList">
+                <div class="empty-state">✨ مهام يومية قريباً...</div>
             </div>
         </div>
     </div>
@@ -314,7 +332,8 @@
 <script>
     let tg = null;
     let currentUserId = null;
-    let currentTask = null;
+    let tasks = [];
+    let completedTasks = [];
     
     // تهيئة
     function initTelegram() {
@@ -334,14 +353,51 @@
         console.log('Tasks page - User ID:', currentUserId);
     }
     
-    // المهام
-    let tasks = [
-        { id: 1, title: "قناة RockyTap", description: "اشترك في القناة الرسمية", icon: "📺", channel_link: "https://t.me/RockyTap", channel_username: "@RockyTap", reward_points: 100, reward_ton: 0, status: "available" },
-        { id: 2, title: "قناة الأخبار", description: "تابع آخر الأخبار", icon: "📰", channel_link: "https://t.me/CryptoNews", channel_username: "@CryptoNews", reward_points: 150, reward_ton: 0.01, status: "available" },
-        { id: 3, title: "مجموعة المناقشات", description: "انضم إلى المجموعة", icon: "👥", channel_link: "https://t.me/RockyTapGroup", channel_username: "@RockyTapGroup", reward_points: 200, reward_ton: 0.02, status: "available" }
-    ];
+    // تحميل المهام من API
+    async function loadTasksFromAPI() {
+        const container = document.getElementById('tasksList');
+        if (container) {
+            container.innerHTML = '<div class="loading">📡 جاري التحميل...</div>';
+        }
+        
+        try {
+            console.log('🔄 Fetching tasks from API...');
+            const result = await apiCall(`tasks?user_id=${currentUserId}`, null, 'GET');
+            console.log('📡 API Response:', result);
+            
+            if (result && result.success && result.tasks && result.tasks.length > 0) {
+                tasks = result.tasks;
+                console.log('✅ Tasks loaded from API:', tasks.length);
+            } else {
+                console.warn('⚠️ No tasks from API, using fallback');
+                tasks = getFallbackTasks();
+            }
+        } catch(e) {
+            console.error('❌ Error loading tasks from API:', e);
+            tasks = getFallbackTasks();
+        }
+        
+        // تحميل المهام المكتملة
+        loadCompletedTasks();
+    }
     
-    let completedTasks = JSON.parse(localStorage.getItem(`completed_tasks_${currentUserId}`) || '[]');
+    function getFallbackTasks() {
+        return [
+            { id: 1, title: "قناة RockyTap", description: "اشترك في القناة الرسمية", icon: "📺", channel_link: "https://t.me/RockyTap", channel_username: "@RockyTap", reward: 100, reward_ton: 0, status: "available" },
+            { id: 2, title: "قناة الأخبار", description: "تابع آخر الأخبار", icon: "📰", channel_link: "https://t.me/CryptoNews", channel_username: "@CryptoNews", reward: 150, reward_ton: 0.01, status: "available" },
+            { id: 3, title: "مجموعة المناقشات", description: "انضم إلى المجموعة", icon: "👥", channel_link: "https://t.me/RockyTapGroup", channel_username: "@RockyTapGroup", reward: 200, reward_ton: 0.02, status: "available" }
+        ];
+    }
+    
+    function loadCompletedTasks() {
+        const saved = localStorage.getItem(`completed_tasks_${currentUserId}`);
+        if (saved) {
+            completedTasks = JSON.parse(saved);
+        } else {
+            completedTasks = [];
+        }
+        updateTasksStatus();
+    }
     
     function updateTasksStatus() {
         for (let task of tasks) {
@@ -372,11 +428,14 @@
                 statusText = '📌 متاحة';
             }
             
+            let rewardPoints = task.reward || task.reward_points || 0;
+            let rewardTon = task.reward_ton || 0;
+            
             let rewardText = '';
-            if (task.reward_points > 0) rewardText += `⭐ ${task.reward_points}`;
-            if (task.reward_ton > 0) {
+            if (rewardPoints > 0) rewardText += `⭐ ${rewardPoints}`;
+            if (rewardTon > 0) {
                 if (rewardText) rewardText += ' + ';
-                rewardText += `💰 ${task.reward_ton}`;
+                rewardText += `💰 ${rewardTon}`;
             }
             
             html += `
@@ -403,14 +462,18 @@
         const modalTitle = document.getElementById('modalTitle');
         const modalBody = document.getElementById('modalBody');
         
+        let rewardPoints = task.reward || task.reward_points || 0;
+        let rewardTon = task.reward_ton || 0;
+        
         let rewardText = '';
-        if (task.reward_points > 0) rewardText += `⭐ ${task.reward_points} نقطة`;
-        if (task.reward_ton > 0) {
+        if (rewardPoints > 0) rewardText += `⭐ ${rewardPoints} نقطة`;
+        if (rewardTon > 0) {
             if (rewardText) rewardText += ' + ';
-            rewardText += `💰 ${task.reward_ton} تون`;
+            rewardText += `💰 ${rewardTon} تون`;
         }
         
         let isCompleted = task.status === 'completed';
+        let channelLink = task.channel_link || `https://t.me/${task.channel_username?.replace('@', '')}`;
         
         modalTitle.innerText = task.title;
         modalBody.innerHTML = `
@@ -428,7 +491,7 @@
                     <span style="color:#00BFFF;">${task.channel_username || 'رابط القناة'}</span>
                 </div>
             </div>
-            ${!isCompleted ? `<button class="modal-btn" onclick="window.open('${task.channel_link}', '_blank')">🔗 اشتراك</button>` : ''}
+            ${!isCompleted ? `<button class="modal-btn" onclick="window.open('${channelLink}', '_blank')">🔗 اشتراك</button>` : ''}
             ${!isCompleted ? `<button class="modal-btn modal-btn-warning" onclick="verifyTask(${task.id})">✅ تحقق من الاشتراك</button>` : ''}
             ${isCompleted ? `<div style="text-align:center;padding:15px;background:rgba(46,204,113,0.2);border-radius:16px;color:#2ecc71;">✅ لقد حصلت على المكافأة بالفعل!</div>` : ''}
         `;
@@ -436,7 +499,7 @@
         modal.style.display = 'flex';
     }
     
-    function verifyTask(taskId) {
+    async function verifyTask(taskId) {
         const task = tasks.find(t => t.id === taskId);
         if (!task) return;
         
@@ -448,36 +511,65 @@
         
         showAlert('🔍 جاري التحقق من اشتراكك...');
         
-        setTimeout(() => {
-            // إضافة المكافأة
-            let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
-            let currentTon = parseFloat(localStorage.getItem(`ton_${currentUserId}`) || '0');
+        let rewardPoints = task.reward || task.reward_points || 0;
+        let rewardTon = task.reward_ton || 0;
+        
+        try {
+            const result = await apiCall('complete_task', {
+                user_id: currentUserId,
+                task_id: taskId,
+                reward: rewardPoints
+            }, 'POST');
             
-            currentPoints += task.reward_points;
-            currentTon += task.reward_ton;
-            
-            localStorage.setItem(`points_${currentUserId}`, currentPoints);
-            localStorage.setItem(`ton_${currentUserId}`, currentTon);
-            
-            // تسجيل المهمة كمكتملة
-            if (!completedTasks.includes(task.id)) {
-                completedTasks.push(task.id);
-                localStorage.setItem(`completed_tasks_${currentUserId}`, JSON.stringify(completedTasks));
+            if (result && result.success) {
+                // تحديث الرصيد المحلي
+                let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
+                currentPoints += rewardPoints;
+                localStorage.setItem(`points_${currentUserId}`, currentPoints);
+                
+                if (rewardTon > 0) {
+                    let currentTon = parseFloat(localStorage.getItem(`ton_${currentUserId}`) || '0');
+                    currentTon += rewardTon;
+                    localStorage.setItem(`ton_${currentUserId}`, currentTon);
+                }
+                
+                if (!completedTasks.includes(task.id)) {
+                    completedTasks.push(task.id);
+                    localStorage.setItem(`completed_tasks_${currentUserId}`, JSON.stringify(completedTasks));
+                }
+                
+                task.status = 'completed';
+                renderTasks();
+                closeModal();
+                showAlert(`🎉 مبروك! حصلت على ${rewardPoints} نقطة!`);
+            } else {
+                completeTaskLocally(task, rewardPoints, rewardTon);
             }
-            
-            task.status = 'completed';
-            renderTasks();
-            
-            let rewardText = '';
-            if (task.reward_points > 0) rewardText += `${task.reward_points} نقطة`;
-            if (task.reward_ton > 0) {
-                if (rewardText) rewardText += ' + ';
-                rewardText += `${task.reward_ton} تون`;
-            }
-            
-            showAlert(`🎉 مبروك! حصلت على ${rewardText}!`);
-            closeModal();
-        }, 1000);
+        } catch(e) {
+            console.error('Error verifying task:', e);
+            completeTaskLocally(task, rewardPoints, rewardTon);
+        }
+    }
+    
+    function completeTaskLocally(task, rewardPoints, rewardTon) {
+        let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
+        let currentTon = parseFloat(localStorage.getItem(`ton_${currentUserId}`) || '0');
+        
+        currentPoints += rewardPoints;
+        currentTon += rewardTon;
+        
+        localStorage.setItem(`points_${currentUserId}`, currentPoints);
+        localStorage.setItem(`ton_${currentUserId}`, currentTon);
+        
+        if (!completedTasks.includes(task.id)) {
+            completedTasks.push(task.id);
+            localStorage.setItem(`completed_tasks_${currentUserId}`, JSON.stringify(completedTasks));
+        }
+        
+        task.status = 'completed';
+        renderTasks();
+        closeModal();
+        showAlert(`🎉 مبروك! حصلت على ${rewardPoints} نقطة!`);
     }
     
     function closeModal() {
@@ -518,7 +610,6 @@
         }
     }
     
-    // التبويبات
     function setupTabs() {
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -530,11 +621,10 @@
         });
     }
     
-    // التهيئة
-    function init() {
+    async function init() {
         initTelegram();
         setupTabs();
-        updateTasksStatus();
+        await loadTasksFromAPI();
     }
     
     init();
