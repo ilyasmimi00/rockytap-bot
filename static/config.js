@@ -5,7 +5,7 @@
 // رابط التطبيق على Cloudflare Pages
 const APP_URL = 'https://rockytap-bot.elias-guerbas.workers.dev';
 
-// رابط API على VPS (ثابت ولا يتغير)
+// رابط API على VPS (ثابت ولا يتغير أبداً)
 const API_URL = 'http://158.220.120.209:5000/api';
 
 // اسم البوت
