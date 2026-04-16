@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>RockyTap - الإعلانات</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="config.js"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
+            font-family: 'Cairo', sans-serif;
+            min-height: 100vh;
+            padding: 15px;
+            padding-bottom: 80px;
+        }
+        .game-container { max-width: 450px; margin: 0 auto; }
+        .main-card {
+            background: rgba(10, 15, 26, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 32px;
+            border: 1px solid rgba(0, 191, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+        .header-custom {
+            padding: 18px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+        }
+        .logo-text {
+            background: linear-gradient(135deg, #00BFFF, #00CED1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        .icon-btn { font-size: 1.5rem; cursor: pointer; transition: all 0.2s; color: #aaa; }
+        .icon-btn:hover { color: #00BFFF; transform: scale(1.1); }
+        .page-title { text-align: center; padding: 20px; color: #00BFFF; font-size: 24px; font-weight: 800; }
+        .lootbox-card {
+            background: linear-gradient(135deg, rgba(0, 30, 50, 0.6), rgba(0, 15, 30, 0.8));
+            border-radius: 24px;
+            border: 2px solid rgba(0, 191, 255, 0.4);
+            padding: 20px;
+            margin: 0 16px 20px 16px;
+            text-align: center;
+        }
+        .lootbox-title { font-size: 20px; font-weight: bold; color: #FFD700; margin-bottom: 15px; }
+        .progress-bar-bg {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            height: 20px;
+            overflow: hidden;
+        }
+        .progress-fill-loot {
+            background: linear-gradient(90deg, #00BFFF, #00CED1);
+            width: 0%;
+            height: 100%;
+            border-radius: 50px;
+            transition: width 0.5s ease;
+        }
+        .claim-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            color: #1a1a2e;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .claim-btn.disabled { background: #555; cursor: not-allowed; opacity: 0.6; }
+        .points-card {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 15px;
+            margin: 0 16px 12px 16px;
+            text-align: center;
+            border: 1px solid rgba(0, 191, 255, 0.2);
+        }
+        .points-value { font-size: 28px; font-weight: bold; color: #00BFFF; }
+        .min-required {
+            background: rgba(255, 100, 100, 0.15);
+            border-radius: 16px;
+            padding: 12px;
+            margin: 0 16px 12px 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 100, 100, 0.3);
+            color: #ff6666;
+        }
+        .reset-card {
+            background: linear-gradient(135deg, rgba(0, 30, 50, 0.5), rgba(0, 15, 30, 0.7));
+            border-radius: 16px;
+            padding: 15px;
+            margin: 0 16px 20px 16px;
+            text-align: center;
+            border: 1px solid rgba(0, 191, 255, 0.3);
+        }
+        .reset-timer { font-size: 24px; font-weight: bold; color: #00BFFF; margin-top: 8px; }
+        .companies-list { padding: 0 16px 20px 16px; }
+        .company-item {
+            background: linear-gradient(135deg, rgba(0, 20, 35, 0.7), rgba(0, 10, 20, 0.8));
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(0, 191, 255, 0.25);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .company-info { display: flex; align-items: center; gap: 15px; }
+        .company-icon { font-size: 32px; }
+        .company-details { display: flex; flex-direction: column; }
+        .company-name { font-weight: bold; font-size: 15px; color: #fff; }
+        .company-views { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .company-reward { font-size: 11px; color: #FFD700; margin-top: 3px; }
+        .watch-ad-btn {
+            background: linear-gradient(135deg, #00BFFF, #0088aa);
+            border: none;
+            padding: 8px 18px;
+            border-radius: 50px;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 80px;
+        }
+        .watch-ad-btn:disabled { background: #555; cursor: not-allowed; }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 10px 20px;
+            border-top: 1px solid rgba(0, 191, 255, 0.2);
+            max-width: 450px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .nav-item { text-align: center; color: #666; transition: color 0.2s; cursor: pointer; font-size: 11px; }
+        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: #00BFFF; }
+        .nav-item:hover { color: #00BFFF; }
+        .loading { text-align: center; padding: 40px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="main-card">
+        
+        <div class="header-custom">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="logo-icon rounded-circle d-flex align-items-center justify-content-center" 
+                         style="width: 38px; height: 38px; background: linear-gradient(135deg, #00BFFF, #0088aa);">
+                        <i class="fas fa-gamepad text-white"></i>
+                    </div>
+                    <span class="logo-text fw-bold fs-5">RockyTap</span>
+                </div>
+                <div class="d-flex gap-3">
+                    <i class="fas fa-wallet icon-btn" onclick="goTo('withdraw')"></i>
+                    <i class="fas fa-bell icon-btn" onclick="showAlert('🔔 لا توجد إشعارات جديدة')"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-title">🌐 NETWORK MISSION</div>
+        
+        <div class="lootbox-card">
+            <div class="lootbox-title">AD LOOTBOX</div>
+            <div class="progress-bar-bg">
+                <div class="progress-fill-loot" id="lootProgressFill" style="width: 0%;"></div>
+            </div>
+            <div class="progress-text" id="lootProgressText">0 / 50 POINTS</div>
+            <div class="lootbox-description" style="font-size:12px;color:#aaa;margin:15px 0;">
+                Watch ads to fill the box.<br>Claim when it reaches 50 points
+            </div>
+            <button class="claim-btn" id="claimBtn" onclick="claimReward()" disabled>
+                🎁 CLAIM REWARD (50 PTS)
+            </button>
+        </div>
+        
+        <div class="points-card">
+            <span>⭐ Your ads points:</span>
+            <div class="points-value" id="userPoints">0</div>
+        </div>
+        
+        <div class="min-required">
+            ⚠️ Minimum 50 PTS required to claim
+        </div>
+        
+        <div class="reset-card">
+            <div>🔄 Ads reset daily</div>
+            <div class="small">🕛 Midnight UTC</div>
+            <div class="reset-timer" id="resetTimer">--:--:--</div>
+        </div>
+        
+        <div class="companies-list" id="companiesList"><div class="loading">جاري التحميل...</div></div>
+        
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <div class="row text-center">
+        <div class="col"><div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div></div>
+        <div class="col"><div class="nav-item active" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('admin')"><i class="fas fa-crown"></i><div>أدمن</div></div></div>
+    </div>
+</div>
+
+<script>
+    let currentUserId = null;
+    
+    if (window.currentUserId) {
+        currentUserId = window.currentUserId;
+    } else if (window.user && window.user.id) {
+        currentUserId = window.user.id;
+    }
+    
+    if (!currentUserId) {
+        currentUserId = 8268443100;
+        window.currentUserId = currentUserId;
+    }
+    
+    console.log('📺 Ads page - User ID:', currentUserId);
+    
+    let userPoints = 0;
+    const targetPoints = 50;
+    
+    let companies = [
+        { name: "AdsGram", icon: "📺", views: 10, totalViews: 10, pointsReward: 15 },
+        { name: "MontageWeb", icon: "🎬", views: 10, totalViews: 10, pointsReward: 15 },
+        { name: "GigaBI Display", icon: "🖥️", views: 10, totalViews: 10, pointsReward: 15 },
+        { name: "شركة 4", icon: "📱", views: 10, totalViews: 10, pointsReward: 15 }
+    ];
+    
+    async function loadAdsFromAPI() {
+        if (!currentUserId) return;
+        
+        try {
+            if (typeof getAdsAPI === 'function') {
+                const result = await getAdsAPI(currentUserId);
+                if (result && result.success) {
+                    document.getElementById('watched_today').innerText = result.watched_today;
+                    document.getElementById('remaining_today').innerText = result.daily_limit - result.watched_today;
+                }
+            }
+        } catch(e) {
+            console.error('Error loading ads:', e);
+        }
+    }
+    
+    function loadData() {
+        const savedPoints = localStorage.getItem('adsPoints');
+        if (savedPoints !== null) userPoints = parseInt(savedPoints);
+        
+        const savedViews = localStorage.getItem('companiesViews');
+        if (savedViews) {
+            const views = JSON.parse(savedViews);
+            for (let i = 0; i < companies.length; i++) {
+                if (views[i] !== undefined) companies[i].views = views[i];
+            }
+        }
+        
+        updateUI();
+        loadAdsFromAPI();
+    }
+    
+    function saveData() {
+        localStorage.setItem('adsPoints', userPoints);
+        localStorage.setItem('companiesViews', JSON.stringify(companies.map(c => c.views)));
+    }
+    
+    function updateUI() {
+        let percentage = (userPoints / targetPoints) * 100;
+        document.getElementById('lootProgressFill').style.width = percentage + '%';
+        document.getElementById('lootProgressText').innerHTML = `${userPoints} / ${targetPoints} POINTS`;
+        document.getElementById('userPoints').innerText = userPoints;
+        
+        const claimBtn = document.getElementById('claimBtn');
+        if (userPoints >= targetPoints) {
+            claimBtn.classList.remove('disabled');
+            claimBtn.disabled = false;
+        } else {
+            claimBtn.classList.add('disabled');
+            claimBtn.disabled = true;
+        }
+        
+        renderCompanies();
+    }
+    
+    function renderCompanies() {
+        const container = document.getElementById('companiesList');
+        container.innerHTML = '';
+        
+        companies.forEach(company => {
+            const isDisabled = company.views <= 0;
+            const btnText = isDisabled ? 'اكتمل' : 'مشاهدة';
+            
+            const div = document.createElement('div');
+            div.className = 'company-item';
+            div.innerHTML = `
+                <div class="company-info">
+                    <div class="company-icon">${company.icon}</div>
+                    <div class="company-details">
+                        <div class="company-name">${company.name}</div>
+                        <div class="company-views">👁️ متبقي: ${company.views}/${company.totalViews}</div>
+                        <div class="company-reward">💰 +${company.pointsReward} نقطة</div>
+                    </div>
+                </div>
+                <button class="watch-ad-btn" data-name="${company.name}" ${isDisabled ? 'disabled' : ''}>
+                    ${btnText}
+                </button>
+            `;
+            container.appendChild(div);
+        });
+        
+        document.querySelectorAll('.watch-ad-btn:not(:disabled)').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const companyName = btn.getAttribute('data-name');
+                watchAd(companyName);
+            });
+        });
+    }
+    
+    async function watchAd(companyName) {
+        if (userPoints >= targetPoints) {
+            showAlert('⚠️ لقد وصلت إلى 50 نقطة! قم بالمطالبة أولاً.');
+            return;
+        }
+        
+        const company = companies.find(c => c.name === companyName);
+        if (!company || company.views <= 0) return;
+        
+        company.views--;
+        userPoints += company.pointsReward;
+        if (userPoints > targetPoints) userPoints = targetPoints;
+        
+        showAlert(`📺 مشاهدة إعلان من ${companyName}\n✅ +${company.pointsReward} نقطة!\n👁️ متبقي ${company.views} مشاهدات`);
+        
+        if (typeof watchAdAPI === 'function') {
+            await watchAdAPI(currentUserId, companyName, company.pointsReward);
+        }
+        
+        updateUI();
+        saveData();
+    }
+    
+    async function claimReward() {
+        if (userPoints >= targetPoints) {
+            const tonReward = userPoints / 10;
+            showAlert(`🎉 مبروك!\n📦 حصلت على ${tonReward.toFixed(4)} تون\n⭐ تم تحويل ${userPoints} نقطة!`);
+            
+            if (typeof claimAdsAPI === 'function') {
+                await claimAdsAPI(currentUserId, userPoints);
+            }
+            
+            userPoints = 0;
+            updateUI();
+            saveData();
+        } else {
+            showAlert(`⚠️ تحتاج إلى ${targetPoints - userPoints} نقطة إضافية للمطالبة`);
+        }
+    }
+    
+    function updateResetTimer() {
+        const now = new Date();
+        const utcNow = new Date(now.toUTCString());
+        const nextReset = new Date(Date.UTC(utcNow.getUTCFullYear(), utcNow.getUTCMonth(), utcNow.getUTCDate() + 1, 0, 0, 0));
+        const diff = nextReset - utcNow;
+        
+        if (diff <= 0) {
+            resetDailyAds();
+            return;
+        }
+        
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (3600000)) / (1000 * 60));
+        const seconds = Math.floor((diff % (60000)) / 1000);
+        document.getElementById('resetTimer').innerHTML = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    function resetDailyAds() {
+        const lastReset = localStorage.getItem('adsLastResetDate');
+        const today = new Date().toDateString();
+        
+        if (lastReset !== today) {
+            userPoints = 0;
+            companies.forEach(company => { company.views = company.totalViews; });
+            updateUI();
+            localStorage.setItem('adsLastResetDate', today);
+        }
+    }
+    
+    function initPage() {
+        console.log('📺 Initializing ads page...');
+        loadData();
+        updateResetTimer();
+        setInterval(updateResetTimer, 1000);
+        resetDailyAds();
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPage);
+    } else {
+        initPage();
+    }
+</script>
+
+</body>
+</html>

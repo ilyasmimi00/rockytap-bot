@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>RockyTap - عجلة الحظ</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="config.js"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
+            font-family: 'Cairo', sans-serif;
+            min-height: 100vh;
+            padding: 15px;
+            padding-bottom: 80px;
+        }
+        .game-container { max-width: 450px; margin: 0 auto; }
+        .main-card {
+            background: rgba(10, 15, 26, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 32px;
+            border: 1px solid rgba(0, 191, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+        .header-custom {
+            padding: 18px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+        }
+        .logo-text {
+            background: linear-gradient(135deg, #00BFFF, #00CED1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        .icon-btn { font-size: 1.5rem; cursor: pointer; transition: all 0.2s; color: #aaa; }
+        .icon-btn:hover { color: #00BFFF; transform: scale(1.1); }
+        .page-title { text-align: center; padding: 20px; color: #00BFFF; font-size: 24px; font-weight: 800; }
+        .wheel-wrapper { position: relative; width: 280px; height: 280px; margin: 20px auto; }
+        canvas { width: 100%; height: 100%; border-radius: 50%; box-shadow: 0 0 30px rgba(0,191,255,0.3); }
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 35px solid #00BFFF;
+            z-index: 10;
+        }
+        .spin-btn {
+            display: block;
+            margin: 20px auto;
+            background: linear-gradient(135deg, #00BFFF, #0088aa);
+            border: none;
+            padding: 14px 35px;
+            border-radius: 60px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .stats-card {
+            background: linear-gradient(135deg, rgba(0, 30, 50, 0.6), rgba(0, 15, 30, 0.8));
+            border-radius: 20px;
+            padding: 15px;
+            margin: 0 16px 16px;
+            text-align: center;
+        }
+        .stats-value { font-size: 28px; font-weight: 800; color: #FFD700; }
+        .last-result {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 12px;
+            margin: 0 16px 20px;
+            text-align: center;
+        }
+        .rewards-list { margin: 20px 16px; }
+        .rewards-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .reward-badge { background: rgba(0,0,0,0.4); border-radius: 50px; padding: 6px 12px; font-size: 12px; border: 1px solid rgba(0,191,255,0.2); color: #FFD700; }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 10px 20px;
+            border-top: 1px solid rgba(0, 191, 255, 0.2);
+            max-width: 450px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .nav-item { text-align: center; color: #666; transition: color 0.2s; cursor: pointer; font-size: 11px; }
+        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: #00BFFF; }
+        .nav-item:hover { color: #00BFFF; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="main-card">
+        
+        <div class="header-custom">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="logo-icon rounded-circle d-flex align-items-center justify-content-center" 
+                         style="width: 38px; height: 38px; background: linear-gradient(135deg, #00BFFF, #0088aa);">
+                        <i class="fas fa-gamepad text-white"></i>
+                    </div>
+                    <span class="logo-text fw-bold fs-5">RockyTap</span>
+                </div>
+                <div class="d-flex gap-3">
+                    <i class="fas fa-wallet icon-btn" onclick="goTo('withdraw')"></i>
+                    <i class="fas fa-bell icon-btn" onclick="showAlert('🔔 لا توجد إشعارات جديدة')"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="page-title">🎡 LUCKY WHEEL</div>
+        
+        <div class="wheel-wrapper">
+            <div class="pointer"></div>
+            <canvas id="wheelCanvas" width="500" height="500"></canvas>
+        </div>
+        
+        <button class="spin-btn" id="spinBtn" onclick="spinWheel()">🔄 SPIN</button>
+        
+        <div class="stats-card">
+            <div>محاولات اليوم المتبقية</div>
+            <div class="stats-value" id="remainingSpins">--</div>
+        </div>
+        
+        <div class="stats-card">
+            <div>إجمالي النقاط التي ربحتها</div>
+            <div class="stats-value" id="totalPoints">0</div>
+        </div>
+        
+        <div class="last-result" id="lastResult">🎲 لم تلعب بعد</div>
+        
+        <div class="rewards-list">
+            <div style="font-size:16px;font-weight:bold;color:#00BFFF;margin-bottom:10px;">🎁 قائمة الجوائز</div>
+            <div class="rewards-grid" id="rewardsGrid"></div>
+        </div>
+        
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <div class="row text-center">
+        <div class="col"><div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div></div>
+        <div class="col"><div class="nav-item active" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('admin')"><i class="fas fa-crown"></i><div>أدمن</div></div></div>
+    </div>
+</div>
+
+<script>
+    let currentUserId = null;
+    
+    if (window.currentUserId) {
+        currentUserId = window.currentUserId;
+    } else if (window.user && window.user.id) {
+        currentUserId = window.user.id;
+    }
+    
+    if (!currentUserId) {
+        currentUserId = 8268443100;
+        window.currentUserId = currentUserId;
+    }
+    
+    console.log('🎡 Wheel page - User ID:', currentUserId);
+    
+    const segments = [
+        { name: "10 PTS", value: 10, color: "#FF6B6B" },
+        { name: "25 PTS", value: 25, color: "#4ECDC4" },
+        { name: "5 PTS", value: 5, color: "#45B7D1" },
+        { name: "50 PTS", value: 50, color: "#96CEB4" },
+        { name: "15 PTS", value: 15, color: "#FFEAA7" },
+        { name: "100 PTS", value: 100, color: "#DDA0DD" },
+        { name: "20 PTS", value: 20, color: "#98D8C8" },
+        { name: "75 PTS", value: 75, color: "#F7B787" }
+    ];
+    
+    let remainingSpins = 3;
+    let totalPoints = 0;
+    let spinning = false;
+    let currentAngle = 0;
+    let canvas = null;
+    let ctx = null;
+    
+    async function loadWheelData() {
+        if (!currentUserId) return;
+        
+        try {
+            if (typeof getWheelStatusAPI === 'function') {
+                const result = await getWheelStatusAPI(currentUserId);
+                if (result && result.success) {
+                    remainingSpins = result.remaining_spins;
+                    totalPoints = result.total_points || 0;
+                    updateDisplay();
+                } else {
+                    updateDisplay();
+                }
+            } else {
+                updateDisplay();
+            }
+        } catch(e) {
+            console.error('Error loading wheel data:', e);
+            updateDisplay();
+        }
+    }
+    
+    async function performSpin() {
+        if (!currentUserId) return false;
+        
+        try {
+            if (typeof spinWheelAPI === 'function') {
+                const result = await spinWheelAPI(currentUserId);
+                if (result && result.success) {
+                    totalPoints = result.new_points;
+                    remainingSpins = result.remaining;
+                    updateDisplay();
+                    return result.reward;
+                } else if (result && !result.success) {
+                    showAlert(result.message);
+                    return null;
+                }
+            }
+            
+            const mockReward = segments[Math.floor(Math.random() * segments.length)].value;
+            remainingSpins--;
+            totalPoints += mockReward;
+            updateDisplay();
+            return mockReward;
+            
+        } catch(e) {
+            console.error('Error spinning wheel:', e);
+            return null;
+        }
+    }
+    
+    function updateDisplay() {
+        const remainingEl = document.getElementById('remainingSpins');
+        const totalEl = document.getElementById('totalPoints');
+        const spinBtn = document.getElementById('spinBtn');
+        
+        if (remainingEl) remainingEl.innerText = remainingSpins;
+        if (totalEl) totalEl.innerText = totalPoints;
+        if (spinBtn) spinBtn.disabled = remainingSpins <= 0;
+    }
+    
+    function initCanvas() {
+        canvas = document.getElementById('wheelCanvas');
+        if (!canvas) return;
+        const container = canvas.parentElement;
+        const size = Math.min(container.clientWidth, 280);
+        canvas.width = size;
+        canvas.height = size;
+        canvas.style.width = `${size}px`;
+        canvas.style.height = `${size}px`;
+        ctx = canvas.getContext('2d');
+        drawWheel();
+    }
+    
+    function drawWheel() {
+        if (!ctx) return;
+        const size = canvas.width;
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = size / 2;
+        const anglePerSegment = (Math.PI * 2) / segments.length;
+        
+        ctx.clearRect(0, 0, size, size);
+        
+        for (let i = 0; i < segments.length; i++) {
+            const startAngle = i * anglePerSegment + currentAngle;
+            const endAngle = (i + 1) * anglePerSegment + currentAngle;
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.fillStyle = segments[i].color;
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(startAngle + anglePerSegment / 2);
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#1a1a2e";
+            ctx.font = `bold ${Math.max(10, size / 25)}px Cairo`;
+            ctx.fillText(segments[i].name, radius * 0.65, 5);
+            ctx.restore();
+        }
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.15, 0, Math.PI * 2);
+        ctx.fillStyle = "#0A0F1A";
+        ctx.fill();
+        ctx.strokeStyle = "#00BFFF";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    }
+    
+    async function spinWheel() {
+        if (spinning) return;
+        if (remainingSpins <= 0) {
+            showAlert('⚠️ لقد استنفدت جميع محاولاتك اليوم! عود غداً.');
+            return;
+        }
+        
+        spinning = true;
+        const spinBtn = document.getElementById('spinBtn');
+        if (spinBtn) spinBtn.disabled = true;
+        
+        const randomIndex = Math.floor(Math.random() * segments.length);
+        const segmentAngle = (Math.PI * 2) / segments.length;
+        const targetAngle = (Math.PI * 2) - (randomIndex * segmentAngle) - (segmentAngle / 2);
+        const spins = 8;
+        const newAngle = targetAngle + (Math.PI * 2 * spins);
+        
+        let start = null;
+        const duration = 3000;
+        const startAngle = currentAngle;
+        
+        function animate(timestamp) {
+            if (!start) start = timestamp;
+            const elapsed = timestamp - start;
+            const progress = Math.min(1, elapsed / duration);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            currentAngle = startAngle + (newAngle - startAngle) * easeOut;
+            drawWheel();
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                currentAngle = newAngle % (Math.PI * 2);
+                drawWheel();
+                
+                const reward = segments[randomIndex].value;
+                
+                performSpin().then(apiReward => {
+                    const finalReward = apiReward !== null ? apiReward : reward;
+                    const lastResult = document.getElementById('lastResult');
+                    if (lastResult) {
+                        lastResult.innerHTML = `🎉 آخر جائزة: ${finalReward} نقطة 🎉`;
+                    }
+                    showAlert(`🎡 مبروك! ربحت ${finalReward} نقطة!`);
+                    
+                    spinning = false;
+                    if (remainingSpins <= 0) {
+                        showAlert('⚠️ انتهت محاولاتك اليومية! عود غداً.');
+                    } else if (spinBtn) {
+                        spinBtn.disabled = false;
+                    }
+                });
+            }
+        }
+        
+        requestAnimationFrame(animate);
+    }
+    
+    function renderRewards() {
+        const container = document.getElementById('rewardsGrid');
+        if (!container) return;
+        container.innerHTML = '';
+        segments.forEach(seg => {
+            const badge = document.createElement('div');
+            badge.className = 'reward-badge';
+            badge.innerHTML = `🎁 ${seg.name}`;
+            container.appendChild(badge);
+        });
+    }
+    
+    window.addEventListener('resize', function() { 
+        if (canvas) initCanvas();
+    });
+    
+    function initPage() {
+        console.log('🎡 Initializing wheel page...');
+        initCanvas();
+        renderRewards();
+        loadWheelData();
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPage);
+    } else {
+        initPage();
+    }
+</script>
+
+</body>
+</html>

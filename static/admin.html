@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RockyTap - لوحة الأدمن</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
+            font-family: 'Cairo', sans-serif;
+            padding: 15px;
+            padding-bottom: 80px;
+            color: white;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #0A0F1A;
+            padding: 12px 20px;
+            border-bottom: 1px solid #00BFFF;
+            z-index: 1000;
+            text-align: center;
+        }
+        .header h3 { color: #00BFFF; margin: 0; }
+        .header-spacer { height: 60px; }
+        .admin-tabs {
+            display: flex;
+            background: #0A0F1A;
+            border-bottom: 1px solid #00BFFF33;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .tab-btn.active {
+            color: #00BFFF;
+            border-bottom: 2px solid #00BFFF;
+        }
+        .card {
+            background: rgba(0, 191, 255, 0.1);
+            border: 1px solid #00BFFF;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #00BFFF;
+            border-radius: 8px;
+            color: white;
+        }
+        .btn {
+            background: #00BFFF;
+            border: none;
+            padding: 10px;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-danger { background: #e74c3c; }
+        .btn-success { background: #2ecc71; }
+        .list-item {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0A0F1A;
+            border-top: 1px solid #00BFFF;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+        .nav-item {
+            text-align: center;
+            color: #666;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .nav-item.active { color: #00BFFF; }
+        .nav-item i { font-size: 22px; display: block; }
+        .message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .message.success { background: #2ecc7133; color: #2ecc71; border: 1px solid #2ecc71; }
+        .message.error { background: #e74c3c33; color: #e74c3c; border: 1px solid #e74c3c; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h3>👑 لوحة التحكم</h3>
+</div>
+<div class="header-spacer"></div>
+
+<div class="admin-tabs">
+    <button class="tab-btn active" onclick="showTab('tasks')">📋 المهام</button>
+    <button class="tab-btn" onclick="showTab('users')">👥 المستخدمين</button>
+</div>
+
+<div id="tasksTab" class="tab-content">
+    <div class="card">
+        <h4 style="color:#00BFFF;">➕ إضافة مهمة جديدة</h4>
+        <input type="text" id="taskTitle" placeholder="عنوان المهمة">
+        <textarea id="taskDescription" rows="2" placeholder="وصف المهمة"></textarea>
+        <input type="text" id="channelLink" placeholder="رابط القناة (https://t.me/...)">
+        <input type="text" id="channelUsername" placeholder="معرف القناة (@username)">
+        <input type="number" id="rewardPoints" placeholder="مكافأة النقاط" value="100">
+        <button class="btn btn-success" onclick="createTask()">➕ إنشاء مهمة</button>
+    </div>
+    
+    <div class="card">
+        <h4 style="color:#00BFFF;">📋 قائمة المهام</h4>
+        <div id="tasksList"></div>
+    </div>
+</div>
+
+<div id="usersTab" class="tab-content" style="display:none;">
+    <div class="card">
+        <h4 style="color:#00BFFF;">➕ إضافة رصيد</h4>
+        <input type="text" id="userId" placeholder="معرف المستخدم">
+        <input type="number" id="amount" placeholder="المبلغ">
+        <select id="currency" class="form-control" style="margin-bottom:10px;">
+            <option value="points">نقاط</option>
+            <option value="ton">تون</option>
+        </select>
+        <button class="btn btn-success" onclick="addBalance()">➕ إضافة</button>
+    </div>
+</div>
+
+<div id="messageBox" class="message"></div>
+
+<div class="bottom-nav">
+    <div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div>
+    <div class="nav-item" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div>
+    <div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div>
+    <div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div>
+    <div class="nav-item active" onclick="goTo('admin')"><i class="fas fa-crown"></i><div>أدمن</div></div>
+</div>
+
+<script>
+    let tg = null;
+    let userId = null;
+    
+    if (window.Telegram && window.Telegram.WebApp) {
+        tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            userId = tg.initDataUnsafe.user.id;
+        }
+    }
+    if (!userId) userId = 8268443100;
+    
+    // المفتاح الموحد للمهام (يستخدمه نفس الملف في صفحة المهام)
+    const TASKS_STORAGE_KEY = 'all_tasks';
+    
+    // تحميل المهام من localStorage
+    function loadTasks() {
+        const tasks = JSON.parse(localStorage.getItem(TASKS_STORAGE_KEY) || '[]');
+        return tasks;
+    }
+    
+    // حفظ المهام
+    function saveTasks(tasks) {
+        localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+    }
+    
+    // عرض المهام في لوحة الأدمن
+    function renderTasks() {
+        const container = document.getElementById('tasksList');
+        if (!container) return;
+        
+        const tasks = loadTasks();
+        
+        if (tasks.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:30px;color:#666;">لا توجد مهام</div>';
+            return;
+        }
+        
+        let html = '';
+        for (let task of tasks) {
+            html += `
+                <div class="list-item">
+                    <div>
+                        <div><strong>${task.icon || '📺'} ${task.title}</strong></div>
+                        <div style="font-size:11px;color:#aaa;">${task.channel_username || task.channel_link}</div>
+                        <div style="color:#FFD700;">⭐ ${task.reward_points} نقطة</div>
+                    </div>
+                    <div>
+                        <button class="btn-danger" style="padding:5px 10px;" onclick="deleteTask(${task.id})">🗑️ حذف</button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+    
+    // إنشاء مهمة جديدة
+    function createTask() {
+        const title = document.getElementById('taskTitle').value.trim();
+        const description = document.getElementById('taskDescription').value.trim();
+        const channel_link = document.getElementById('channelLink').value.trim();
+        const channel_username = document.getElementById('channelUsername').value.trim();
+        const reward_points = parseInt(document.getElementById('rewardPoints').value);
+        
+        if (!title || !channel_link) {
+            showMessage('⚠️ عنوان المهمة ورابط القناة مطلوبان', 'error');
+            return;
+        }
+        
+        const tasks = loadTasks();
+        
+        const newTask = {
+            id: Date.now(),
+            title: title,
+            description: description,
+            channel_link: channel_link,
+            channel_username: channel_username || channel_link.replace('https://t.me/', '@'),
+            reward_points: reward_points,
+            reward_ton: 0,
+            icon: '📺',
+            is_active: true
+        };
+        
+        tasks.push(newTask);
+        saveTasks(tasks);
+        
+        // تنظيف الحقول
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskDescription').value = '';
+        document.getElementById('channelLink').value = '';
+        document.getElementById('channelUsername').value = '';
+        document.getElementById('rewardPoints').value = '100';
+        
+        renderTasks();
+        showMessage('✅ تم إنشاء المهمة بنجاح! ستظهر للمستخدمين فوراً', 'success');
+    }
+    
+    // حذف مهمة
+    function deleteTask(taskId) {
+        if (!confirm('هل أنت متأكد من حذف هذه المهمة؟')) return;
+        
+        let tasks = loadTasks();
+        tasks = tasks.filter(t => t.id !== taskId);
+        saveTasks(tasks);
+        renderTasks();
+        showMessage('✅ تم حذف المهمة', 'success');
+    }
+    
+    // إضافة رصيد
+    function addBalance() {
+        const targetId = document.getElementById('userId').value.trim();
+        const amount = parseFloat(document.getElementById('amount').value);
+        const currency = document.getElementById('currency').value;
+        
+        if (!targetId || !amount) {
+            showMessage('⚠️ املأ جميع الحقول', 'error');
+            return;
+        }
+        
+        let current = parseFloat(localStorage.getItem(`${currency}_${targetId}`) || '0');
+        current += amount;
+        localStorage.setItem(`${currency}_${targetId}`, current);
+        
+        showMessage(`✅ تم إضافة ${amount} ${currency} للمستخدم ${targetId}`, 'success');
+        
+        document.getElementById('userId').value = '';
+        document.getElementById('amount').value = '';
+    }
+    
+    function showTab(tab) {
+        document.getElementById('tasksTab').style.display = tab === 'tasks' ? 'block' : 'none';
+        document.getElementById('usersTab').style.display = tab === 'users' ? 'block' : 'none';
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+    
+    function showMessage(msg, type) {
+        const box = document.getElementById('messageBox');
+        box.textContent = msg;
+        box.className = `message ${type}`;
+        box.style.display = 'block';
+        setTimeout(() => box.style.display = 'none', 3000);
+    }
+    
+    function goTo(page) {
+        const pages = { 
+            'home': 'index.html', 
+            'tasks': 'tasks.html', 
+            'wheel': 'wheel.html', 
+            'ads': 'ads.html', 
+            'withdraw': 'withdraw.html', 
+            'referral': 'referral.html', 
+            'giftcode': 'giftcode.html', 
+            'admin': 'admin.html' 
+        };
+        if (pages[page]) window.location.href = pages[page];
+    }
+    
+    // التهيئة
+    renderTasks();
+    
+    window.createTask = createTask;
+    window.deleteTask = deleteTask;
+    window.addBalance = addBalance;
+    window.showTab = showTab;
+    window.goTo = goTo;
+</script>
+</body>
+</html>

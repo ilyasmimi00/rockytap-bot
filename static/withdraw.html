@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>RockyTap - السحب</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="config.js"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
+            font-family: 'Cairo', sans-serif;
+            min-height: 100vh;
+            padding: 15px;
+            padding-bottom: 80px;
+        }
+        .game-container { max-width: 450px; margin: 0 auto; }
+        .main-card {
+            background: rgba(10, 15, 26, 0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 32px;
+            border: 1px solid rgba(0, 191, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+        .header-custom {
+            padding: 18px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+        }
+        .logo-text {
+            background: linear-gradient(135deg, #00BFFF, #00CED1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        .icon-btn { font-size: 1.5rem; cursor: pointer; transition: all 0.2s; color: #aaa; }
+        .icon-btn:hover { color: #00BFFF; transform: scale(1.1); }
+        .page-title { text-align: center; padding: 20px; color: #00BFFF; font-size: 24px; font-weight: 800; }
+        .balance-card {
+            background: linear-gradient(135deg, rgba(0,30,50,0.6), rgba(0,15,30,0.8));
+            border-radius: 24px;
+            padding: 20px;
+            margin: 20px 16px;
+            text-align: center;
+        }
+        .balance-value { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #fff, #00BFFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .input-group { margin: 0 16px 20px; }
+        .input-group label { display: block; margin-bottom: 8px; color: #00BFFF; font-size: 14px; }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(0,191,255,0.3);
+            border-radius: 16px;
+            color: white;
+            font-size: 14px;
+        }
+        .withdraw-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            padding: 14px;
+            border-radius: 60px;
+            color: #1a1a2e;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            width: calc(100% - 32px);
+            margin: 0 16px 20px;
+        }
+        .history-section { margin: 20px 16px; }
+        .history-title { font-size: 18px; font-weight: bold; color: #00BFFF; margin-bottom: 15px; border-bottom: 1px solid rgba(0,191,255,0.2); padding-bottom: 10px; }
+        .history-item {
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-status { padding: 4px 12px; border-radius: 50px; font-size: 11px; }
+        .status-pending { background: rgba(255,165,0,0.2); color: #FFA500; }
+        .status-completed { background: rgba(46,204,113,0.2); color: #2ecc71; }
+        .status-rejected { background: rgba(231,76,60,0.2); color: #e74c3c; }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(15px);
+            padding: 10px 20px;
+            border-top: 1px solid rgba(0,191,255,0.2);
+            max-width: 450px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .nav-item { text-align: center; color: #666; transition: color 0.2s; cursor: pointer; font-size: 11px; }
+        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: #00BFFF; }
+        .nav-item:hover { color: #00BFFF; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="main-card">
+        
+        <div class="header-custom">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="logo-icon rounded-circle d-flex align-items-center justify-content-center" 
+                         style="width: 38px; height: 38px; background: linear-gradient(135deg, #00BFFF, #0088aa);">
+                        <i class="fas fa-gamepad text-white"></i>
+                    </div>
+                    <span class="logo-text fw-bold fs-5">RockyTap</span>
+                </div>
+                <div class="d-flex gap-3">
+                    <i class="fas fa-wallet icon-btn" onclick="goTo('withdraw')"></i>
+                    <i class="fas fa-bell icon-btn" onclick="showAlert('🔔 لا توجد إشعارات جديدة')"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="page-title">💰 السحب</div>
+        
+        <div class="balance-card">
+            <div>رصيدك المتاح</div>
+            <div class="balance-value" id="balance">0.00</div>
+            <div>TON</div>
+        </div>
+        
+        <div class="input-group">
+            <label><i class="fas fa-link"></i> عنوان المحفظة</label>
+            <input type="text" id="walletAddress" placeholder="UQ... أو EQ...">
+        </div>
+        
+        <div class="input-group">
+            <label><i class="fas fa-coins"></i> المبلغ (TON)</label>
+            <input type="number" id="amount" placeholder="الحد الأدنى 0.02" step="0.01" min="0.02">
+        </div>
+        
+        <button class="withdraw-btn" onclick="requestWithdraw()">🚀 طلب سحب</button>
+        
+        <div class="history-section">
+            <div class="history-title">📋 السحوبات السابقة</div>
+            <div id="historyList"></div>
+        </div>
+        
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <div class="row text-center">
+        <div class="col"><div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div></div>
+        <div class="col"><div class="nav-item active" onclick="goTo('admin')"><i class="fas fa-crown"></i><div>أدمن</div></div></div>
+    </div>
+</div>
+
+<script>
+    let tg = initWebApp();
+    let user = getUser();
+    let userId = user?.id;
+    
+    let withdrawals = [
+        { id: 1, amount: 0.05, date: "2024-01-15", status: "completed" },
+        { id: 2, amount: 0.10, date: "2024-01-20", status: "pending" }
+    ];
+    
+    let userBalance = 1.25;
+    
+    function loadData() {
+        const saved = localStorage.getItem('withdrawals');
+        if (saved) withdrawals = JSON.parse(saved);
+        const savedBalance = localStorage.getItem('userBalance');
+        if (savedBalance) userBalance = parseFloat(savedBalance);
+        updateDisplay();
+    }
+    
+    function updateDisplay() {
+        document.getElementById('balance').innerText = userBalance.toFixed(4);
+        
+        let historyHtml = '';
+        for (let w of withdrawals) {
+            let statusClass = w.status === 'pending' ? 'status-pending' : (w.status === 'completed' ? 'status-completed' : 'status-rejected');
+            let statusText = w.status === 'pending' ? 'قيد المعالجة' : (w.status === 'completed' ? 'مكتمل' : 'مرفوض');
+            historyHtml += `
+                <div class="history-item">
+                    <div>
+                        <div>💰 ${w.amount} TON</div>
+                        <div style="font-size:11px;color:#aaa;">📅 ${w.date}</div>
+                    </div>
+                    <div class="history-status ${statusClass}">${statusText}</div>
+                </div>
+            `;
+        }
+        document.getElementById('historyList').innerHTML = historyHtml || '<div style="text-align:center;padding:20px;color:#666;">لا توجد سحوبات سابقة</div>';
+    }
+    
+    function requestWithdraw() {
+        let wallet = document.getElementById('walletAddress').value.trim();
+        let amount = parseFloat(document.getElementById('amount').value);
+        
+        if (!wallet) {
+            showAlert('⚠️ الرجاء إدخال عنوان المحفظة');
+            return;
+        }
+        if (!amount || amount < 0.02) {
+            showAlert('⚠️ الحد الأدنى للسحب هو 0.02 TON');
+            return;
+        }
+        if (amount > userBalance) {
+            showAlert('⚠️ المبلغ أكبر من رصيدك');
+            return;
+        }
+        
+        userBalance -= amount;
+        withdrawals.unshift({
+            id: withdrawals.length + 1,
+            amount: amount,
+            date: new Date().toLocaleDateString('ar-EG'),
+            status: 'pending'
+        });
+        
+        saveData();
+        updateDisplay();
+        
+        showAlert(`✅ تم إرسال طلب السحب بنجاح!\n💰 المبلغ: ${amount.toFixed(4)} TON\n📋 سيتم مراجعة طلبك من قبل الإدارة`);
+        sendToBot('withdraw', { amount: amount, wallet: wallet });
+        
+        document.getElementById('amount').value = '';
+    }
+    
+    function saveData() {
+        localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
+        localStorage.setItem('userBalance', userBalance);
+    }
+    
+    window.addEventListener('beforeunload', () => { saveData(); });
+    
+    loadData();
+</script>
+
+</body>
+</html>
