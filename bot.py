@@ -1,6 +1,6 @@
 # bot.py
 """
-RockyTap Bot - النسخة الكاملة المتكاملة
+RockyTap Bot - النسخة الكاملة المتكاملة مع نظام الإعلانات المدفوعة
 """
 
 import logging
@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, BotCommand
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 from database import Database
@@ -41,6 +41,30 @@ class RockyTapBot:
         # إنشاء التطبيق
         self.application = Application.builder().token(BOT_TOKEN).build()
         
+        # استيراد المعالجات
+        from handlers.start import StartHandler
+        from handlers.balance import BalanceHandler
+        from handlers.withdraw import WithdrawHandler
+        from handlers.referral import ReferralHandler
+        from handlers.giftcode import GiftCodeHandler
+        from handlers.tasks import TasksHandler
+        from handlers.ads import AdsHandler
+        from handlers.wheel import WheelHandler
+        from handlers.admin import AdminHandler
+        from handlers.ads_posting import AdsPostingHandler
+        
+        # تهيئة المعالجات
+        self.start_handler = StartHandler(self)
+        self.balance_handler = BalanceHandler(self)
+        self.withdraw_handler = WithdrawHandler(self)
+        self.referral_handler = ReferralHandler(self)
+        self.giftcode_handler = GiftCodeHandler(self)
+        self.tasks_handler = TasksHandler(self)
+        self.ads_handler = AdsHandler(self)
+        self.wheel_handler = WheelHandler(self)
+        self.admin_handler = AdminHandler(self)
+        self.ads_posting_handler = AdsPostingHandler(self)
+        
         self.setup_handlers()
         
         logger.info(f"✅ {BOT_NAME} Bot initialized")
@@ -49,12 +73,10 @@ class RockyTapBot:
         """إعداد معالجات الأوامر والأزرار"""
         
         # أوامر
-        self.application.add_handler(CommandHandler("start", self.start_command))
-        self.application.add_handler(CommandHandler("admin", self.admin_command))
-        self.application.add_handler(CommandHandler("balance", self.balance_command))
-        self.application.add_handler(CommandHandler("stats", self.stats_command))
+        self.application.add_handler(CommandHandler("start", self.start_handler.start_command))
+        self.application.add_handler(CommandHandler("admin", self.admin_handler.admin_command))
         
-        # معالج الأزرار
+        # معالج الأزرار الرئيسي
         self.application.add_handler(CallbackQueryHandler(self.handle_callback))
         
         # معالج WebApp
@@ -63,138 +85,115 @@ class RockyTapBot:
             self.handle_webapp_data
         ))
         
-        # معالج الرسائل النصية
+        # معالج الرسائل النصية للمهام والإعلانات
         self.application.add_handler(MessageHandler(
             filters.TEXT & ~filters.COMMAND,
-            self.handle_message
+            self.handle_text_messages
         ))
         
-        logger.info("✅ Handlers configured")
+        # تعيين أوامر البوت
+        self.application.bot.set_my_commands([
+            BotCommand("start", "🏠 القائمة الرئيسية"),
+            BotCommand("admin", "👑 لوحة التحكم"),
+        ])
     
-    # ==================== أوامر البوت ====================
-    
-    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """أمر /start - تسجيل المستخدم وفتح الواجهة"""
-        user = update.effective_user
-        user_id = user.id
+    async def handle_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """معالج الأزرار الموحد"""
+        query = update.callback_query
+        data = query.data
         
-        # تسجيل المستخدم
-        db_user = self.db.get_or_create_user(user_id, user.username, user.first_name)
+        await query.answer()
         
-        # التحقق من وجود إحالة
-        if context.args and context.args[0].startswith('ref_'):
-            try:
-                referrer_id = int(context.args[0].replace('ref_', ''))
-                if referrer_id != user_id:
-                    result, msg = self.db.create_referral(
-                        referrer_id=referrer_id,
-                        referred_id=user_id,
-                        referred_username=user.username or user.first_name
-                    )
-                    if result:
-                        logger.info(f"✅ Referral created: {referrer_id} -> {user_id}")
-            except ValueError:
-                pass
+        # قائمة المهام
+        if data == 'tasks_menu':
+            await self.tasks_handler.show_tasks_menu(update, context)
+        elif data.startswith('complete_task_'):
+            await self.tasks_handler.complete_task(update, context)
         
-        text = f"""
-🎉 <b>مرحباً بك في {self.bot_name}!</b> 🎉
-
-💰 <b>رصيدك:</b>
-• تون: <code>{db_user['balance_ton']:.4f}</code>
-• نقاط: <code>{db_user['balance_points']:.0f}</code>
-
-📱 اضغط على الزر أدناه لبدء اللعب!
-"""
+        # الإعلانات العادية
+        elif data == 'ads_menu':
+            await self.ads_handler.show_ads_menu(update, context)
+        elif data == 'watch_ad':
+            await self.ads_handler.watch_ad(update, context)
         
-        keyboard = [[
-            InlineKeyboardButton(
-                "🎮 افتح اللعبة", 
-                web_app=WebAppInfo(url=f"{self.webapp_url}/index.html")
-            )
-        ]]
+        # الإعلانات المدفوعة
+        elif data == 'ads_posting_menu':
+            await self.ads_posting_handler.show_ads_posting_menu(update, context)
+        elif data.startswith('buy_ad_package_'):
+            await self.ads_posting_handler.buy_ad_package(update, context)
+        elif data == 'my_ads':
+            await self.ads_posting_handler.my_ads(update, context)
+        elif data == 'my_ads_list':
+            await self.ads_posting_handler.my_ads_list(update, context)
+        elif data.startswith('ad_manage_'):
+            await self.ads_posting_handler.manage_ad(update, context)
+        elif data.startswith('ad_refresh_'):
+            await self.ads_posting_handler.refresh_ad_stats(update, context)
+        elif data.startswith('ad_edit_'):
+            await self.ads_posting_handler.edit_ad(update, context)
+        elif data.startswith('ad_delete_'):
+            await self.ads_posting_handler.delete_ad(update, context)
+        elif data.startswith('ad_members_'):
+            await self.ads_posting_handler.ad_members_list(update, context)
+        elif data.startswith('ad_verify_'):
+            await self.ads_posting_handler.verify_channel(update, context)
         
-        await update.message.reply_text(
-            text, 
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode='HTML'
-        )
-    
-    async def admin_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """أمر /admin - فتح لوحة الأدمن"""
-        user_id = update.effective_user.id
+        # عجلة الحظ
+        elif data == 'wheel_menu':
+            await self.wheel_handler.show_wheel_menu(update, context)
+        elif data == 'spin_wheel':
+            await self.wheel_handler.spin_wheel(update, context)
         
-        if user_id not in self.admin_ids:
-            await update.message.reply_text("⛔ أنت لست مشرفاً")
-            return
+        # الرصيد
+        elif data == 'balance_menu':
+            await self.balance_handler.show_balance(update, context)
+        elif data == 'convert_points':
+            await self.balance_handler.start_convert(update, context)
         
-        text = f"""
-👑 <b>لوحة تحكم الأدمن - {self.bot_name}</b>
-━━━━━━━━━━━━━━━━━━
-📌 استخدم الواجهة الرسومية للإدارة:
-        """
+        # السحب
+        elif data == 'withdraw_menu':
+            await self.withdraw_handler.show_withdraw_menu(update, context)
+        elif data == 'withdraw_history':
+            await self.withdraw_handler.show_withdraw_history(update, context)
         
-        keyboard = [[
-            InlineKeyboardButton(
-                "👑 فتح لوحة التحكم",
-                web_app=WebAppInfo(url=f"{self.webapp_url}/admin.html")
-            )
-        ]]
+        # الإحالات
+        elif data == 'referral_menu':
+            await self.referral_handler.show_referral_menu(update, context)
+        elif data == 'share_referral':
+            await self.referral_handler.share_referral(update, context)
+        elif data == 'copy_referral_link':
+            await self.referral_handler.copy_referral_link(update, context)
         
-        await update.message.reply_text(
-            text,
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode='HTML'
-        )
-    
-    async def balance_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """أمر /balance - عرض الرصيد"""
-        user_id = update.effective_user.id
-        user_data = self.db.get_user(user_id)
+        # الأكواد
+        elif data == 'giftcode_menu':
+            await self.giftcode_handler.show_giftcode_menu(update, context)
+        elif data == 'enter_giftcode':
+            context.user_data['awaiting_giftcode'] = True
+            await query.edit_message_text("📝 الرجاء إرسال الكود:", parse_mode='HTML')
+        elif data == 'giftcode_history':
+            await self.giftcode_handler.show_giftcode_history(update, context)
         
-        if not user_data:
-            await update.message.reply_text("❌ حدث خطأ في تحميل بياناتك")
-            return
+        # الأدمن
+        elif data.startswith('admin_'):
+            await self.admin_handler.handle_admin_callback(update, context)
         
-        text = f"""
-💰 <b>رصيدك الحالي</b>
-━━━━━━━━━━━━━━━━━━
-💵 <b>تون (TON):</b> <code>{user_data['balance_ton']:.4f}</code>
-⭐ <b>نقاط (POINTS):</b> <code>{user_data['balance_points']:.0f}</code>
-━━━━━━━━━━━━━━━━━━
-💱 <b>سعر الصرف:</b> {POINTS_TO_TON_RATE} نقطة = 1 تون
-📉 <b>الحد الأدنى للسحب:</b> <code>{WITHDRAWAL_MIN:.4f}</code> تون
-"""
+        # القائمة الرئيسية
+        elif data == 'back_to_main':
+            await self.start_handler.show_main_menu(update, context)
         
-        await update.message.reply_text(text, parse_mode='HTML')
-    
-    async def stats_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """أمر /stats - إحصائيات المستخدم"""
-        user_id = update.effective_user.id
-        user_data = self.db.get_user(user_id)
-        
-        if not user_data:
-            await update.message.reply_text("❌ حدث خطأ في تحميل بياناتك")
-            return
-        
-        withdrawals = self.db.get_user_withdrawals(user_id)
-        total_withdrawn = sum(w['amount'] for w in withdrawals if w['status'] == 'completed')
-        
-        text = f"""
-📊 <b>إحصائياتك الشخصية</b>
-━━━━━━━━━━━━━━━━━━
-👤 <b>المستخدم:</b> {user_data['first_name']}
-💰 <b>الرصيد (تون):</b> <code>{user_data['balance_ton']:.4f}</code>
-⭐ <b>الرصيد (نقاط):</b> <code>{user_data['balance_points']:.0f}</code>
-💵 <b>إجمالي الأرباح:</b> <code>{user_data['total_earned_ton']:.4f}</code> تون
-💳 <b>إجمالي المسحوبات:</b> <code>{total_withdrawn:.4f}</code> تون
-👥 <b>الإحالات:</b> <code>{user_data['total_referrals']}</code>
-📅 <b>تاريخ التسجيل:</b> {user_data['join_date']}
-━━━━━━━━━━━━━━━━━━
-"""
-        
-        await update.message.reply_text(text, parse_mode='HTML')
-    
-    # ==================== معالج WebApp ====================
+        # صفحة الويب
+        elif data == 'open_withdraw_page':
+            await self.withdraw_handler.open_webapp(update, context)
+        elif data == 'open_referral_page':
+            await self.referral_handler.open_webapp(update, context)
+        elif data == 'open_giftcode_page':
+            await self.giftcode_handler.open_webapp(update, context)
+        elif data == 'open_tasks_page':
+            await self.tasks_handler.open_webapp(update, context)
+        elif data == 'open_ads_page':
+            await self.ads_handler.open_webapp(update, context)
+        elif data == 'open_wheel_page':
+            await self.wheel_handler.open_webapp(update, context)
     
     async def handle_webapp_data(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """معالجة البيانات الواردة من WebApp"""
@@ -206,13 +205,13 @@ class RockyTapBot:
             
             logger.info(f"📱 WebApp data: {action} from user {user_id}")
             
-            # ===== إجراءات الأدمن =====
+            # إجراءات الأدمن
             if action.startswith('admin_'):
-                await self._handle_admin_actions(update, context, action, data, user_id)
+                await self.admin_handler.handle_webapp_action(update, context, action, data)
                 return
             
-            # ===== جلب بيانات المستخدم =====
-            if action == 'get_user_data':
+            # جلب بيانات المستخدم
+            elif action == 'get_user_data':
                 user_data = self.db.get_user(user_id)
                 today_ads = self.db.get_today_ads_count(user_id)
                 
@@ -225,7 +224,7 @@ class RockyTapBot:
                 }
                 await update.message.reply_text(json.dumps(response))
             
-            # ===== جلب إحصائيات الإحالات =====
+            # جلب إحصائيات الإحالات
             elif action == 'get_referral_stats':
                 stats = self.db.get_user_referrals_stats(user_id)
                 bot_info = await context.bot.get_me()
@@ -242,7 +241,7 @@ class RockyTapBot:
                     'referrals': stats['referrals']
                 }))
             
-            # ===== تحويل النقاط =====
+            # تحويل النقاط
             elif action == 'convert_points':
                 points = data.get('points', 0)
                 success, msg = self.db.convert_points_to_ton(user_id, points)
@@ -254,7 +253,7 @@ class RockyTapBot:
                         'success': True,
                         'ton': user_data['balance_ton'],
                         'points': user_data['balance_points'],
-                        'message': f'✅ تم تحويل {points} نقطة إلى {points/POINTS_TO_TON_RATE:.4f} تون'
+                        'message': f'✅ تم تحويل {points} نقطة'
                     }))
                 else:
                     await update.message.reply_text(json.dumps({
@@ -263,80 +262,34 @@ class RockyTapBot:
                         'message': f'❌ {msg}'
                     }))
             
-            # ===== مشاهدة إعلان =====
+            # مشاهدة إعلان عادي
             elif action == 'watch_ad':
-                company = data.get('company', '')
                 reward = data.get('reward', AD_REWARD_POINTS)
                 today_ads = self.db.get_today_ads_count(user_id)
-                ads_settings = self.db.get_ads_settings()
                 
-                daily_limit = ads_settings.get('daily_limit', DAILY_ADS_LIMIT)
-                points_reward = ads_settings.get('points_per_ad', AD_REWARD_POINTS)
-                
-                if today_ads >= daily_limit:
+                if today_ads >= DAILY_ADS_LIMIT:
                     await update.message.reply_text(json.dumps({
                         'action': 'ad_result',
                         'success': False,
-                        'message': f'⚠️ لقد وصلت للحد اليومي للإعلانات ({daily_limit})! عود غداً.'
+                        'message': f'⚠️ لقد وصلت للحد اليومي للإعلانات ({DAILY_ADS_LIMIT})!'
                     }))
                     return
                 
-                self.db.update_user_balance(user_id, points_amount=points_reward, update_earned=True)
-                self.db.add_ad_watch(user_id, points_reward)
+                self.db.update_user_balance(user_id, points_amount=reward, update_earned=True)
+                self.db.add_ad_watch(user_id, reward)
                 
                 user_data = self.db.get_user(user_id)
-                remaining = daily_limit - (today_ads + 1)
+                remaining = DAILY_ADS_LIMIT - (today_ads + 1)
                 
                 await update.message.reply_text(json.dumps({
                     'action': 'ad_result',
                     'success': True,
-                    'reward': points_reward,
+                    'reward': reward,
                     'new_points': user_data['balance_points'],
-                    'remaining': remaining,
-                    'message': f'✅ +{points_reward} نقطة! متبقي {remaining} إعلان اليوم'
+                    'remaining': remaining
                 }))
             
-            # ===== المطالبة بمكافأة الإعلانات =====
-            elif action == 'claim_ads':
-                points = data.get('points', 0)
-                user_data = self.db.get_user(user_id)
-                
-                if user_data['balance_points'] < points:
-                    await update.message.reply_text(json.dumps({
-                        'action': 'claim_result',
-                        'success': False,
-                        'message': '❌ لا تملك هذه النقاط!'
-                    }))
-                    return
-                
-                success, msg = self.db.convert_points_to_ton(user_id, points)
-                
-                if success:
-                    await update.message.reply_text(json.dumps({
-                        'action': 'claim_result',
-                        'success': True,
-                        'ton': points/POINTS_TO_TON_RATE,
-                        'points': 0,
-                        'message': f'🎉 مبروك! حصلت على {points/POINTS_TO_TON_RATE:.4f} تون'
-                    }))
-                else:
-                    await update.message.reply_text(json.dumps({
-                        'action': 'claim_result',
-                        'success': False,
-                        'message': f'❌ {msg}'
-                    }))
-            
-            # ===== عجلة الحظ =====
-            elif action == 'get_wheel_status':
-                today_spins = self.db.get_today_wheel_spins(user_id)
-                user_data = self.db.get_user(user_id)
-                
-                await update.message.reply_text(json.dumps({
-                    'action': 'wheel_status',
-                    'remaining_spins': max(0, DAILY_WHEEL_SPINS - today_spins),
-                    'total_points': user_data['balance_points'] if user_data else 0
-                }))
-            
+            # عجلة الحظ
             elif action == 'spin_wheel':
                 today_spins = self.db.get_today_wheel_spins(user_id)
                 
@@ -344,7 +297,7 @@ class RockyTapBot:
                     await update.message.reply_text(json.dumps({
                         'action': 'wheel_result',
                         'success': False,
-                        'message': '⚠️ لقد استنفدت جميع محاولاتك اليوم! عود غداً.'
+                        'message': '⚠️ لقد استنفدت جميع محاولاتك اليوم!'
                     }))
                     return
                 
@@ -360,11 +313,10 @@ class RockyTapBot:
                     'success': True,
                     'reward': reward,
                     'new_points': user_data['balance_points'],
-                    'remaining': remaining,
-                    'message': f'🎉 مبروك! ربحت {reward} نقطة!'
+                    'remaining': remaining
                 }))
             
-            # ===== تفعيل كود =====
+            # تفعيل كود
             elif action == 'redeem_code':
                 code = data.get('code', '').upper()
                 success, result = self.db.use_gift_code(user_id, code)
@@ -377,8 +329,7 @@ class RockyTapBot:
                         'reward_points': result['reward_points'],
                         'reward_ton': result['reward_ton'],
                         'new_points': user_data['balance_points'],
-                        'new_ton': user_data['balance_ton'],
-                        'message': '✅ تم تفعيل الكود بنجاح!'
+                        'new_ton': user_data['balance_ton']
                     }))
                 else:
                     await update.message.reply_text(json.dumps({
@@ -387,7 +338,7 @@ class RockyTapBot:
                         'message': f'❌ {result}'
                     }))
             
-            # ===== طلب سحب =====
+            # طلب سحب
             elif action == 'request_withdraw':
                 amount = data.get('amount', 0)
                 wallet = data.get('wallet', '')
@@ -399,8 +350,7 @@ class RockyTapBot:
                         'action': 'withdraw_result',
                         'success': True,
                         'withdrawal_id': withdrawal_id,
-                        'amount': amount,
-                        'message': f'✅ تم إرسال طلب السحب #{withdrawal_id} بنجاح!'
+                        'amount': amount
                     }))
                 else:
                     await update.message.reply_text(json.dumps({
@@ -409,272 +359,85 @@ class RockyTapBot:
                         'message': f'❌ {withdrawal_id}'
                     }))
             
-            # ===== الحصول على اسم البوت =====
-            elif action == 'get_bot_username':
-                bot_info = await context.bot.get_me()
-                await update.message.reply_text(json.dumps({
-                    'action': 'bot_username',
-                    'username': bot_info.username
-                }))
-            
             else:
                 logger.warning(f"⚠️ Unknown action: {action}")
-                await update.message.reply_text(json.dumps({
-                    'action': 'error',
-                    'message': '❌ إجراء غير معروف'
-                }))
                 
         except json.JSONDecodeError as e:
             logger.error(f"JSON Error: {e}")
-            await update.message.reply_text(json.dumps({
-                'action': 'error',
-                'message': '❌ خطأ في قراءة البيانات'
-            }))
         except Exception as e:
             logger.error(f"Error: {e}")
-            await update.message.reply_text(json.dumps({
-                'action': 'error',
-                'message': f'❌ حدث خطأ: {str(e)[:100]}'
-            }))
     
-    # ==================== إجراءات الأدمن ====================
-    
-    async def _handle_admin_actions(self, update, context, action, data, admin_id):
-        """معالجة إجراءات الأدمن"""
-        
-        if admin_id not in self.admin_ids:
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': False,
-                'message': '⛔ أنت لست مشرفاً'
-            }))
-            return
-        
-        # إدارة المستخدمين
-        if action == 'admin_add_balance':
-            target_id = int(data.get('user_id', 0))
-            amount = float(data.get('amount', 0))
-            currency = data.get('currency', 'ton')
-            
-            if currency == 'ton':
-                self.db.update_user_balance(target_id, ton_amount=amount, update_earned=True)
-            else:
-                self.db.update_user_balance(target_id, points_amount=amount, update_earned=True)
-            
-            self.db.add_admin_log(admin_id, f"إضافة رصيد", f"أضاف {amount} {currency} للمستخدم {target_id}")
-            
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': True,
-                'message': f'✅ تم إضافة {amount} {currency} للمستخدم {target_id}',
-                'refresh': True
-            }))
-        
-        elif action == 'admin_ban_user':
-            target_id = int(data.get('user_id', 0))
-            self.db.update_user_block_status(target_id, True)
-            self.db.add_admin_log(admin_id, f"حظر مستخدم", f"حظر المستخدم {target_id}")
-            
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': True,
-                'message': f'✅ تم حظر المستخدم {target_id}',
-                'refresh': True
-            }))
-        
-        elif action == 'admin_toggle_ban':
-            target_id = int(data.get('user_id', 0))
-            user = self.db.get_user(target_id)
-            if user:
-                new_status = not user.get('is_blocked', False)
-                self.db.update_user_block_status(target_id, new_status)
-                self.db.add_admin_log(admin_id, f"تغيير حالة", f"غير حالة المستخدم {target_id} إلى {'محظور' if new_status else 'نشط'}")
-            
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': True,
-                'message': '✅ تم تغيير حالة المستخدم',
-                'refresh': True
-            }))
-        
-        # إعدادات الإعلانات
-        elif action == 'admin_save_api_key':
-            api_key = data.get('api_key')
-            self.db.save_ads_settings(api_key=api_key)
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': True,
-                'message': '✅ تم حفظ API كود'
-            }))
-        
-        elif action == 'admin_save_points_per_ad':
-            points = data.get('points')
-            self.db.save_ads_settings(points_per_ad=points)
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': True,
-                'message': f'✅ تم حفظ النقاط: {points} نقطة لكل إعلان'
-            }))
-        
-        elif action == 'admin_save_daily_ad_limit':
-            limit = data.get('limit')
-            self.db.save_ads_settings(daily_limit=limit)
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': True,
-                'message': f'✅ تم حفظ الحد اليومي: {limit} إعلان'
-            }))
-        
-        # إعدادات الإحالات
-        elif action == 'admin_save_referral':
-            settings = data
-            self.db.save_referral_settings(
-                reward_type=settings.get('reward_type', 'both'),
-                points_value=settings.get('points_value', 100),
-                ton_value=settings.get('ton_value', 0.01),
-                required_tasks=settings.get('required_tasks', 6)
-            )
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': True,
-                'message': '✅ تم حفظ إعدادات الإحالات'
-            }))
-        
-        # إعدادات السحب
-        elif action == 'admin_save_min_withdraw':
-            min_amount = float(data.get('min_withdraw', 0.02))
-            # يمكن حفظ هذا الإعداد في SystemSetting
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': True,
-                'message': f'✅ تم حفظ الحد الأدنى للسحب: {min_amount} TON'
-            }))
-        
-        # إعدادات النظام
-        elif action == 'admin_save_exchange_rate':
-            rate = data.get('rate')
-            # يمكن حفظ هذا الإعداد في SystemSetting
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': True,
-                'message': f'✅ تم حفظ سعر الصرف: 1 تون = {rate} نقاط'
-            }))
-        
-        elif action == 'admin_save_settings':
-            settings = data.get('settings', {})
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': True,
-                'message': '✅ تم حفظ جميع الإعدادات'
-            }))
-        
-        # إنشاء كود
-        elif action == 'admin_create_code':
-            amount = float(data.get('amount', 0))
-            max_uses = int(data.get('max_uses', 100))
-            
-            success, code = self.db.create_gift_code(
-                created_by=admin_id,
-                reward_ton=amount,
-                max_uses=max_uses,
-                is_admin=True
-            )
-            
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': success,
-                'message': f'✅ تم إنشاء الكود: <code>{code}</code>' if success else '❌ حدث خطأ'
-            }))
-        
-        else:
-            await update.message.reply_text(json.dumps({
-                'action': 'admin_operation_result',
-                'success': False,
-                'message': f'❌ إجراء غير معروف: {action}'
-            }))
-    
-    # ==================== معالج الأزرار ====================
-    
-    async def handle_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """معالج الأزرار الموحد"""
-        query = update.callback_query
-        data = query.data
-        
-        await query.answer()
-        
-        if data == 'back_to_main':
-            await self.start_command(update, context)
-        elif data == 'referral_info':
-            await self.show_referral_info(update, context)
-        else:
-            logger.warning(f"Unknown callback: {data}")
-    
-    # ==================== نظام الإحالات ====================
-    
-    async def show_referral_info(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """عرض معلومات الإحالات"""
-        query = update.callback_query
+    async def handle_text_messages(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """معالجة الرسائل النصية"""
         user_id = update.effective_user.id
         
-        stats = self.db.get_user_referrals_stats(user_id)
-        bot_info = await context.bot.get_me()
-        referral_link = f"https://t.me/{bot_info.username}?start=ref_{user_id}"
+        # معالج إدخال الكود
+        if context.user_data.get('awaiting_giftcode'):
+            code = update.message.text.strip().upper()
+            success, result = self.db.use_gift_code(user_id, code)
+            
+            if success:
+                user_data = self.db.get_user(user_id)
+                await update.message.reply_text(
+                    f"✅ تم تفعيل الكود بنجاح!\n"
+                    f"🎁 حصلت على: {result['reward_points']} نقطة + {result['reward_ton']:.4f} تون\n"
+                    f"💰 رصيدك الحالي: {user_data['balance_ton']:.4f} تون\n"
+                    f"⭐ نقاطك: {user_data['balance_points']:.0f} نقطة"
+                )
+            else:
+                await update.message.reply_text(f"❌ {result}")
+            
+            context.user_data['awaiting_giftcode'] = False
+            return
         
-        settings = stats['settings']
-        if settings['reward_type'] == 'points':
-            reward_text = f"⭐ {settings['points_value']} نقطة"
-        elif settings['reward_type'] == 'ton':
-            reward_text = f"💰 {settings['ton_value']:.4f} تون"
-        else:
-            reward_text = f"⭐ {settings['points_value']} نقطة + 💰 {settings['ton_value']:.4f} تون"
+        # معالج إدخال تحويل النقاط
+        if context.user_data.get('awaiting_convert'):
+            try:
+                points = float(update.message.text.strip())
+                success, msg = self.db.convert_points_to_ton(user_id, points)
+                
+                if success:
+                    user_data = self.db.get_user(user_id)
+                    await update.message.reply_text(
+                        f"✅ {msg}\n"
+                        f"💰 رصيد التون: {user_data['balance_ton']:.4f}\n"
+                        f"⭐ رصيد النقاط: {user_data['balance_points']:.0f}"
+                    )
+                else:
+                    await update.message.reply_text(f"❌ {msg}")
+            except ValueError:
+                await update.message.reply_text("❌ الرجاء إدخال رقم صحيح")
+            
+            context.user_data['awaiting_convert'] = False
+            return
         
-        text = f"""
-👥 <b>نظام الإحالات</b>
-━━━━━━━━━━━━━━━━━━
-📎 <b>رابط الإحالة الخاص بك:</b>
-<code>{referral_link}</code>
-
-🎁 <b>مكافأة كل إحالة:</b>
-{reward_text}
-
-📌 <b>شرط الإحالة:</b>
-إكمال المدعو {settings['required_tasks']} مهام
-
-━━━━━━━━━━━━━━━━━━
-📊 <b>إحصائياتك:</b>
-• 👥 إجمالي الإحالات: <code>{stats['total']}</code>
-• ✅ المكتملة: <code>{stats['granted']}</code>
-• ⏳ قيد الانتظار: <code>{stats['pending']}</code>
-• 💰 الأرباح: {stats['total_points_earned']} نقطة + {stats['total_ton_earned']:.4f} تون
-"""
+        # معالج إدخال تفاصيل الإعلان
+        if context.user_data.get('awaiting_ad_details'):
+            await self.ads_posting_handler.handle_ad_details(update, context)
+            return
         
-        if stats['referrals']:
-            text += "\n📋 <b>قائمة المدعوين:</b>\n"
-            for ref in stats['referrals'][:10]:
-                text += f"• @{ref['username']} | {ref['status']}\n"
+        # معالج إدخال تعديل الإعلان
+        if context.user_data.get('awaiting_ad_edit'):
+            await self.ads_posting_handler.handle_ad_edit(update, context)
+            return
         
-        keyboard = [
-            [InlineKeyboardButton("🔗 مشاركة الرابط", callback_data='share_referral')],
-            [InlineKeyboardButton("🔄 تحديث", callback_data='referral_info')],
-            [InlineKeyboardButton("🔙 رجوع", callback_data='back_to_main')]
-        ]
+        # معالج إدخال إنشاء مهمة (للأدمن)
+        if context.user_data.get('awaiting_task_creation'):
+            await self.admin_handler.handle_task_creation(update, context)
+            return
         
-        await query.edit_message_text(
-            text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='HTML'
-        )
-    
-    # ==================== معالج الرسائل ====================
-    
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """معالجة الرسائل النصية"""
+        # معالج إدخال حذف مهمة (للأدمن)
+        if context.user_data.get('awaiting_task_deletion'):
+            await self.admin_handler.handle_task_deletion(update, context)
+            return
+        
+        # رسالة عادية
         await update.message.reply_text(
             "❓ أمر غير معروف. استخدم /start للبدء",
             reply_markup=InlineKeyboardMarkup([[
                 InlineKeyboardButton("🏠 القائمة الرئيسية", callback_data='back_to_main')
             ]])
         )
-    
-    # ==================== تشغيل البوت ====================
     
     def run(self):
         """تشغيل البوت"""

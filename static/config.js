@@ -1,4 +1,4 @@
-// config.js - إعدادات الواجهة الأمامية (يوجد في مجلد static)
+// config.js - إعدادات الواجهة الأمامية الكاملة
 
 // ==================== إعدادات التطبيق ====================
 
@@ -6,7 +6,6 @@
 const APP_URL = 'https://rockytap-bot.elias-guerbas.workers.dev';
 
 // رابط API (خادم Flask)
-// للتشغيل المحلي عبر ngrok
 const API_URL = 'https://krista-arrhenotokous-superficially.ngrok-free.dev/api';
 
 // اسم البوت
@@ -22,10 +21,12 @@ function goTo(page) {
         'tasks': `${APP_URL}/tasks.html`,
         'wheel': `${APP_URL}/wheel.html`,
         'ads': `${APP_URL}/ads.html`,
+        'ads_posting': `${APP_URL}/ads_posting.html`,
         'withdraw': `${APP_URL}/withdraw.html`,
         'referral': `${APP_URL}/referral.html`,
         'giftcode': `${APP_URL}/giftcode.html`,
-        'admin': `${APP_URL}/admin.html`
+        'admin': `${APP_URL}/admin.html`,
+        'admin_ads': `${APP_URL}/admin_ads.html`
     };
     
     if (pages[page]) {
@@ -62,7 +63,6 @@ function initWebApp() {
     
     console.warn('⚠️ Telegram WebApp not available - running in browser mode');
     
-    // للاختبار في المتصفح
     if (!windowUser) {
         const testId = localStorage.getItem('testUserId');
         if (testId) {
@@ -216,8 +216,6 @@ function updateUserUI(data) {
     }
 }
 
-// ==================== تحميل البيانات ====================
-
 async function loadUserData(userId) {
     const result = await getUserData(userId);
     if (result.success) {
@@ -286,11 +284,9 @@ function toggleLanguage() {
 function updateUILanguage() {
     const t = translations[currentLanguage];
     
-    // تحديث زر اللغة
     const langBtn = document.querySelector('.lang-btn');
     if (langBtn) langBtn.innerHTML = `<i class="fas fa-globe"></i> ${t.langBtn}`;
     
-    // تحديث النصوص
     const elements = {
         'tonLabel': t.ton,
         'pointsLabel': t.points,
@@ -318,7 +314,6 @@ function updateUILanguage() {
         if (el) el.innerText = text;
     }
     
-    // تغيير اتجاه الصفحة
     if (currentLanguage === 'ar') {
         document.body.dir = 'rtl';
         document.documentElement.lang = 'ar';
@@ -339,7 +334,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📍 BOT_USERNAME:', BOT_USERNAME);
 });
 
-// تصدير الدوال للاستخدام العالمي
 window.goTo = goTo;
 window.goBack = goBack;
 window.showAlert = showAlert;
@@ -365,7 +359,6 @@ window.loadUserData = loadUserData;
 window.toggleLanguage = toggleLanguage;
 window.updateUILanguage = updateUILanguage;
 
-// متغيرات عامة
 window.BOT_USERNAME = BOT_USERNAME;
 window.APP_URL = APP_URL;
 window.API_URL = API_URL;

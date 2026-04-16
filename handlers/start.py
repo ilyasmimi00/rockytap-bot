@@ -3,9 +3,9 @@
 معالج الأوامر الرئيسية والقائمة الرئيسية
 """
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import ContextTypes
-from config import BOT_NAME, WELCOME_MESSAGE, WEBAPP_URL
+from config import BOT_NAME, WEBAPP_URL
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,8 +21,10 @@ class StartHandler:
         user = update.effective_user
         user_id = user.id
         
+        logger.info(f"📱 Start command from user {user_id}")
+        
         # تسجيل المستخدم في قاعدة البيانات
-        self.db.get_or_create_user(user_id, user.username, user.first_name)
+        db_user = self.db.get_or_create_user(user_id, user.username, user.first_name)
         
         # التحقق من وجود إحالة في الرابط
         if context.args and context.args[0].startswith('ref_'):
@@ -36,6 +38,16 @@ class StartHandler:
                     )
                     if result:
                         logger.info(f"✅ Referral created: {referrer_id} -> {user_id}")
+                        try:
+                            await self.bot.application.bot.send_message(
+                                chat_id=referrer_id,
+                                text=f"🎉 <b>مبروك! لديك إحالة جديدة!</b>\n\n"
+                                     f"👤 المستخدم: {user.first_name}\n"
+                                     f"📊 عندما يكمل هذا المستخدم المهام المطلوبة، ستحصل على المكافأة!",
+                                parse_mode='HTML'
+                            )
+                        except Exception as e:
+                            logger.error(f"Failed to notify referrer: {e}")
             except ValueError:
                 pass
         
@@ -51,19 +63,12 @@ class StartHandler:
         if not user_data:
             user_data = self.db.get_or_create_user(user_id, user.username, user.first_name)
         
-        # تحديث حالة المهام المجانية (لشروط السحب)
-        free_tasks_status = self.db.get_user_free_tasks_status(user_id)
-        free_completed = sum(1 for t in free_tasks_status if t['status'] == 'completed')
-        free_total = len(free_tasks_status)
-        
         text = f"""
-🎉 <b>{WELCOME_MESSAGE}</b> 🎉
+🎉 <b>مرحباً بك في {self.bot.bot_name}!</b> 🎉
 ━━━━━━━━━━━━━━━━━━
 👤 <b>المستخدم:</b> {user.first_name}
 💰 <b>الرصيد (تون):</b> <code>{user_data['balance_ton']:.4f}</code> TON
 ⭐ <b>الرصيد (نقاط):</b> <code>{user_data['balance_points']:.0f}</code> نقطة
-✅ <b>المهام المنجزة:</b> <code>{user_data.get('completed_tasks', 0)}</code>
-🎁 <b>المهام المجانية:</b> <code>{free_completed}/{free_total}</code>
 👥 <b>الإحالات:</b> <code>{user_data['total_referrals']}</code>
 ━━━━━━━━━━━━━━━━━━
 📌 اختر ما تريد:
@@ -83,8 +88,8 @@ class StartHandler:
                 InlineKeyboardButton("🎁 أكواد", callback_data='giftcode_menu')
             ],
             [
-                InlineKeyboardButton("💸 سحب", callback_data='withdraw_menu'),
-                InlineKeyboardButton("💳 محفظتي", callback_data='wallet_menu')
+                InlineKeyboardButton("📢 إعلاناتي", callback_data='ads_posting_menu'),
+                InlineKeyboardButton("💸 سحب", callback_data='withdraw_menu')
             ]
         ]
         

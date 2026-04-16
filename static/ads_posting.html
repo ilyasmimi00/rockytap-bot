@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RockyTap - الإعلانات المدفوعة</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="config.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
+            font-family: 'Cairo', sans-serif;
+            padding: 15px;
+            padding-bottom: 80px;
+            color: white;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #0A0F1A;
+            padding: 12px 20px;
+            border-bottom: 1px solid #00BFFF;
+            z-index: 1000;
+            text-align: center;
+        }
+        .header h3 { color: #00BFFF; margin: 0; }
+        .header-spacer { height: 60px; }
+        
+        .balance-card {
+            background: linear-gradient(135deg, #1a2a3a, #0f1a24);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid #00BFFF33;
+        }
+        .balance-value { font-size: 28px; font-weight: bold; color: #00BFFF; }
+        
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .package-card {
+            background: rgba(0, 191, 255, 0.1);
+            border: 1px solid #00BFFF;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .package-card:hover {
+            background: rgba(0, 191, 255, 0.2);
+            transform: scale(1.02);
+        }
+        .package-views { font-size: 24px; font-weight: bold; color: #FFD700; }
+        .package-price { color: #aaa; font-size: 14px; }
+        
+        .channel-card {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border: 1px solid #00BFFF33;
+        }
+        .channel-name { font-size: 16px; font-weight: bold; }
+        .channel-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 11px;
+        }
+        .status-approved { background: #2ecc7133; color: #2ecc71; }
+        .status-pending { background: #f39c1233; color: #f39c12; }
+        .status-rejected { background: #e74c3c33; color: #e74c3c; }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #00BFFF33;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .tab.active {
+            color: #00BFFF;
+            border-bottom: 2px solid #00BFFF;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: #0A0F1A;
+            border: 2px solid #00BFFF;
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .btn {
+            background: #00BFFF;
+            border: none;
+            padding: 12px;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-danger { background: #e74c3c; }
+        .btn-warning { background: #f39c12; }
+        .btn-success { background: #2ecc71; }
+        .btn-outline { background: transparent; border: 1px solid #00BFFF; }
+        .close-btn {
+            float: left;
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #00BFFF;
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0A0F1A;
+            border-top: 1px solid #00BFFF;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+        .nav-item {
+            text-align: center;
+            color: #666;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .nav-item.active { color: #00BFFF; }
+        .nav-item i { font-size: 22px; display: block; }
+        
+        .info-text {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h3>📢 الإعلانات المدفوعة</h3>
+</div>
+<div class="header-spacer"></div>
+
+<div class="container">
+    <!-- الرصيد -->
+    <div class="balance-card">
+        <div>💰 رصيدك</div>
+        <div class="balance-value" id="balance">0.00</div>
+        <div>TON</div>
+    </div>
+
+    <!-- التبويبات -->
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('packages')">📦 شراء</div>
+        <div class="tab" onclick="showTab('channels')">📺 قنواتي</div>
+        <div class="tab" onclick="showTab('myads')">📋 إعلاناتي</div>
+    </div>
+
+    <!-- تبويب الباقات -->
+    <div id="packagesTab">
+        <div class="package-grid" id="packagesGrid"></div>
+        <div class="info-text">* بعد الشراء، سيتم إرسال قناتك للمراجعة من قبل الأدمن</div>
+    </div>
+
+    <!-- تبويب القنوات -->
+    <div id="channelsTab" style="display:none;">
+        <button class="btn" onclick="openAddChannelModal()">➕ إضافة قناة جديدة</button>
+        <div style="margin-top: 15px;" id="channelsList"></div>
+    </div>
+
+    <!-- تبويب إعلاناتي -->
+    <div id="myadsTab" style="display:none;">
+        <div id="myAdsList"></div>
+    </div>
+</div>
+
+<!-- نافذة إضافة قناة -->
+<div id="addChannelModal" class="modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal('addChannelModal')">&times;</button>
+        <h3 style="color:#00BFFF;">➕ إضافة قناة جديدة</h3>
+        <div id="addChannelBody"></div>
+    </div>
+</div>
+
+<!-- نافذة إنشاء إعلان -->
+<div id="createAdModal" class="modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal('createAdModal')">&times;</button>
+        <h3 style="color:#00BFFF;">📝 إنشاء إعلان جديد</h3>
+        <div id="createAdBody"></div>
+    </div>
+</div>
+
+<!-- نافذة إدارة الإعلان -->
+<div id="manageAdModal" class="modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal('manageAdModal')">&times;</button>
+        <h3 style="color:#00BFFF;" id="manageAdTitle">إدارة الإعلان</h3>
+        <div id="manageAdBody"></div>
+    </div>
+</div>
+
+<!-- القائمة السفلية -->
+<div class="bottom-nav">
+    <div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div>
+    <div class="nav-item" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div>
+    <div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div>
+    <div class="nav-item active" onclick="goTo('ads_posting')"><i class="fas fa-chart-line"></i><div>إعلانات</div></div>
+    <div class="nav-item" onclick="goTo('admin')"><i class="fas fa-crown"></i><div>أدمن</div></div>
+</div>
+
+<script>
+    let tg = null;
+    let currentUserId = null;
+    let currentUsername = null;
+    let packages = [];
+    let userChannels = [];
+    let userAds = [];
+    let selectedPackage = null;
+    let selectedChannel = null;
+    
+    // تهيئة
+    function initTelegram() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            tg = window.Telegram.WebApp;
+            tg.expand();
+            tg.ready();
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                currentUserId = tg.initDataUnsafe.user.id;
+                currentUsername = tg.initDataUnsafe.user.username || tg.initDataUnsafe.user.first_name;
+            }
+        }
+        if (!currentUserId) {
+            currentUserId = localStorage.getItem('userId') || 8268443100;
+            currentUsername = 'TestUser';
+        }
+        window.currentUserId = currentUserId;
+    }
+    
+    // تحميل الباقات
+    async function loadPackages() {
+        packages = [
+            { id: 1, views: 25, price: 0.0375 },
+            { id: 2, views: 50, price: 0.075 },
+            { id: 3, views: 100, price: 0.15 },
+            { id: 4, views: 150, price: 0.225 },
+            { id: 5, views: 200, price: 0.30 },
+            { id: 6, views: 500, price: 0.75 },
+            { id: 7, views: 1000, price: 1.5 }
+        ];
+        renderPackages();
+    }
+    
+    function renderPackages() {
+        const container = document.getElementById('packagesGrid');
+        if (!container) return;
+        
+        let html = '';
+        for (let pkg of packages) {
+            html += `
+                <div class="package-card" onclick="selectPackage(${pkg.id})">
+                    <div class="package-views">👁️ ${pkg.views}</div>
+                    <div class="package-price">${pkg.price} TON</div>
+                    <div style="font-size:11px;color:#aaa;margin-top:5px;">💰 ربحك: ${(pkg.views * 0.001).toFixed(3)} TON</div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+    
+    // تحميل القنوات
+    function loadChannels() {
+        userChannels = JSON.parse(localStorage.getItem(`user_channels_${currentUserId}`) || '[]');
+        renderChannels();
+    }
+    
+    function renderChannels() {
+        const container = document.getElementById('channelsList');
+        if (!container) return;
+        
+        if (userChannels.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">📺 لا توجد قنوات<br>أضف قناتك الأولى</div>';
+            return;
+        }
+        
+        let html = '';
+        for (let channel of userChannels) {
+            let statusClass = '';
+            let statusText = '';
+            switch(channel.status) {
+                case 'approved':
+                    statusClass = 'status-approved';
+                    statusText = '✅ معتمدة';
+                    break;
+                case 'rejected':
+                    statusClass = 'status-rejected';
+                    statusText = '❌ مرفوضة';
+                    break;
+                default:
+                    statusClass = 'status-pending';
+                    statusText = '⏳ قيد المراجعة';
+            }
+            
+            html += `
+                <div class="channel-card">
+                    <div class="channel-name">📺 ${channel.channel_name || channel.channel_username}</div>
+                    <div>🔗 ${channel.channel_link}</div>
+                    <div><span class="channel-status ${statusClass}">${statusText}</span></div>
+                    ${channel.admin_note ? `<div style="font-size:12px;color:#f39c12;margin-top:5px;">📝 ملاحظة: ${channel.admin_note}</div>` : ''}
+                    <div style="margin-top:10px;">
+                        <button class="btn-danger" style="padding:5px 15px;font-size:12px;" onclick="deleteChannel(${channel.id})">🗑️ حذف</button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+    
+    function openAddChannelModal() {
+        const modal = document.getElementById('addChannelModal');
+        const body = document.getElementById('addChannelBody');
+        
+        body.innerHTML = `
+            <div style="margin-bottom:15px;">
+                <input type="text" id="channelName" placeholder="اسم القناة (اختياري)">
+                <input type="text" id="channelLink" placeholder="رابط القناة (https://t.me/...) *">
+                <div class="info-text">⚠️ يجب أن يكون البوت @Youlim5_bot أدمن في قناتك</div>
+            </div>
+            <button class="btn" onclick="addChannel()">➕ إرسال للمراجعة</button>
+        `;
+        
+        modal.style.display = 'flex';
+    }
+    
+    function addChannel() {
+        const channelName = document.getElementById('channelName').value.trim();
+        const channelLink = document.getElementById('channelLink').value.trim();
+        
+        if (!channelLink) {
+            showAlert('⚠️ الرجاء إدخال رابط القناة');
+            return;
+        }
+        
+        // استخراج معرف القناة
+        let channelUsername = channelLink;
+        if (channelLink.includes('t.me/')) {
+            channelUsername = '@' + channelLink.split('t.me/')[1];
+        }
+        
+        const newChannel = {
+            id: Date.now(),
+            user_id: currentUserId,
+            user_username: currentUsername,
+            channel_name: channelName || channelUsername,
+            channel_link: channelLink,
+            channel_username: channelUsername,
+            status: 'pending',
+            admin_note: null,
+            created_at: new Date().toISOString()
+        };
+        
+        userChannels.push(newChannel);
+        localStorage.setItem(`user_channels_${currentUserId}`, JSON.stringify(userChannels));
+        
+        // حفظ في localStorage العام للأدمن
+        let allRequests = JSON.parse(localStorage.getItem('all_channel_requests') || '[]');
+        allRequests.push(newChannel);
+        localStorage.setItem('all_channel_requests', JSON.stringify(allRequests));
+        
+        closeModal('addChannelModal');
+        showAlert('✅ تم إرسال قناتك للمراجعة. سيتم إشعارك عند الموافقة.');
+        loadChannels();
+        showTab('channels');
+    }
+    
+    function deleteChannel(channelId) {
+        if (!confirm('هل أنت متأكد من حذف هذه القناة؟')) return;
+        
+        userChannels = userChannels.filter(c => c.id !== channelId);
+        localStorage.setItem(`user_channels_${currentUserId}`, JSON.stringify(userChannels));
+        
+        // حذف من طلبات الأدمن
+        let allRequests = JSON.parse(localStorage.getItem('all_channel_requests') || '[]');
+        allRequests = allRequests.filter(r => r.id !== channelId);
+        localStorage.setItem('all_channel_requests', JSON.stringify(allRequests));
+        
+        loadChannels();
+        showAlert('✅ تم حذف القناة');
+    }
+    
+    function selectPackage(packageId) {
+        selectedPackage = packages.find(p => p.id === packageId);
+        if (!selectedPackage) return;
+        
+        // التحقق من وجود قنوات معتمدة
+        const approvedChannels = userChannels.filter(c => c.status === 'approved');
+        if (approvedChannels.length === 0) {
+            showAlert('⚠️ يجب إضافة قناة والموافقة عليها أولاً');
+            showTab('channels');
+            return;
+        }
+        
+        // التحقق من الرصيد
+        let balance = parseFloat(localStorage.getItem(`ton_${currentUserId}`) || '0');
+        if (balance < selectedPackage.price) {
+            showAlert(`⚠️ رصيدك غير كافٍ! تحتاج ${selectedPackage.price} TON`);
+            return;
+        }
+        
+        openCreateAdModal(approvedChannels);
+    }
+    
+    function openCreateAdModal(approvedChannels) {
+        const modal = document.getElementById('createAdModal');
+        const body = document.getElementById('createAdBody');
+        
+        let channelsHtml = '<select id="selectedChannel" style="width:100%;padding:10px;margin-bottom:10px;">';
+        for (let channel of approvedChannels) {
+            channelsHtml += `<option value="${channel.id}">${channel.channel_name || channel.channel_username}</option>`;
+        }
+        channelsHtml += '</select>';
+        
+        body.innerHTML = `
+            <div style="margin-bottom:15px;">
+                <div style="background:#00BFFF33;padding:10px;border-radius:10px;margin-bottom:15px;">
+                    <div>📦 الباقة: ${selectedPackage.views} مشاهدة</div>
+                    <div>💰 السعر: ${selectedPackage.price} TON</div>
+                    <div>💡 أرباحك المتوقعة: ${(selectedPackage.views * 0.001).toFixed(3)} TON</div>
+                </div>
+                <label>اختر القناة:</label>
+                ${channelsHtml}
+                <input type="text" id="adTitle" placeholder="عنوان الإعلان *">
+                <textarea id="adDescription" rows="3" placeholder="وصف الإعلان (اختياري)"></textarea>
+            </div>
+            <button class="btn" onclick="createAd()">✅ إنشاء الإعلان</button>
+        `;
+        
+        modal.style.display = 'flex';
+    }
+    
+    async function createAd() {
+        const selectedChannelId = document.getElementById('selectedChannel').value;
+        const selectedChan = userChannels.find(c => c.id == selectedChannelId);
+        const title = document.getElementById('adTitle').value.trim();
+        const description = document.getElementById('adDescription').value.trim();
+        
+        if (!title) {
+            showAlert('⚠️ عنوان الإعلان مطلوب');
+            return;
+        }
+        
+        // خصم الرصيد
+        let balance = parseFloat(localStorage.getItem(`ton_${currentUserId}`) || '0');
+        balance -= selectedPackage.price;
+        localStorage.setItem(`ton_${currentUserId}`, balance);
+        document.getElementById('balance').innerText = balance.toFixed(4);
+        
+        // إنشاء الإعلان
+        const newAd = {
+            id: Date.now(),
+            title: title,
+            description: description,
+            channel_id: selectedChan.id,
+            channel_link: selectedChan.channel_link,
+            channel_username: selectedChan.channel_username,
+            views_count: selectedPackage.views,
+            current_views: 0,
+            members_count: 0,
+            status: 'pending',
+            is_verified: false,
+            created_at: new Date().toLocaleString(),
+            paid_amount: selectedPackage.price,
+            bot_earnings: 0,
+            user_earnings: 0
+        };
+        
+        userAds.unshift(newAd);
+        localStorage.setItem(`user_ads_${currentUserId}`, JSON.stringify(userAds));
+        
+        closeModal('createAdModal');
+        showAlert('✅ تم إنشاء الإعلان! ينتظر موافقة الأدمن.');
+        loadMyAds();
+        showTab('myads');
+    }
+    
+    async function loadMyAds() {
+        userAds = JSON.parse(localStorage.getItem(`user_ads_${currentUserId}`) || '[]');
+        renderMyAds();
+    }
+    
+    function renderMyAds() {
+        const container = document.getElementById('myAdsList');
+        if (!container) return;
+        
+        if (userAds.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">📋 لا توجد إعلانات</div>';
+            return;
+        }
+        
+        let html = '';
+        for (let ad of userAds) {
+            let statusClass = '';
+            let statusText = '';
+            switch(ad.status) {
+                case 'active':
+                    statusClass = 'status-approved';
+                    statusText = '🟢 نشط';
+                    break;
+                case 'completed':
+                    statusClass = 'status-approved';
+                    statusText = '✅ مكتمل';
+                    break;
+                case 'rejected':
+                    statusClass = 'status-rejected';
+                    statusText = '❌ مرفوض';
+                    break;
+                default:
+                    statusClass = 'status-pending';
+                    statusText = '⏳ قيد المراجعة';
+            }
+            
+            let progress = (ad.current_views / ad.views_count) * 100;
+            
+            html += `
+                <div class="channel-card" onclick="openManageAd(${ad.id})">
+                    <div class="channel-name">📢 ${ad.title}</div>
+                    <div>🔗 ${ad.channel_username}</div>
+                    <div><span class="channel-status ${statusClass}">${statusText}</span></div>
+                    <div class="progress-bar" style="background:#2c3e50;border-radius:10px;height:6px;margin:8px 0;">
+                        <div style="background:#00BFFF;width:${progress}%;height:6px;border-radius:10px;"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;">
+                        <span>👁️ ${ad.current_views}/${ad.views_count}</span>
+                        <span>👥 ${ad.members_count}</span>
+                        <span>💰 ${ad.user_earnings.toFixed(4)}</span>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+    
+    function openManageAd(adId) {
+        const ad = userAds.find(a => a.id === adId);
+        if (!ad) return;
+        
+        const modal = document.getElementById('manageAdModal');
+        const body = document.getElementById('manageAdBody');
+        
+        let progress = (ad.current_views / ad.views_count) * 100;
+        
+        body.innerHTML = `
+            <div style="margin-bottom:15px;">
+                <div><strong>📢 ${ad.title}</strong></div>
+                <div style="color:#aaa;font-size:13px;margin:5px 0;">${ad.description || 'لا يوجد وصف'}</div>
+                <div style="background:#00BFFF33;padding:10px;border-radius:10px;margin:10px 0;">
+                    <div>👁️ المشاهدات: ${ad.current_views}/${ad.views_count} (${progress.toFixed(1)}%)</div>
+                    <div>👥 الأعضاء: ${ad.members_count}</div>
+                    <div>💰 أرباحك: ${ad.user_earnings.toFixed(4)} TON</div>
+                    <div>🔗 القناة: ${ad.channel_username}</div>
+                    <div>✅ الحالة: ${ad.status === 'active' ? 'نشط' : ad.status === 'completed' ? 'مكتمل' : 'قيد المراجعة'}</div>
+                </div>
+                ${ad.status === 'pending' ? `<button class="btn btn-danger" onclick="deleteAd(${ad.id})">🗑️ حذف الإعلان</button>` : ''}
+                <button class="btn btn-outline" onclick="closeModal('manageAdModal')">🔙 إغلاق</button>
+            </div>
+        `;
+        
+        document.getElementById('manageAdTitle').innerText = ad.title;
+        modal.style.display = 'flex';
+    }
+    
+    function deleteAd(adId) {
+        if (!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return;
+        
+        let ad = userAds.find(a => a.id === adId);
+        
+        if (ad && ad.status === 'pending' && ad.current_views === 0) {
+            let balance = parseFloat(localStorage.getItem(`ton_${currentUserId}`) || '0');
+            balance += ad.paid_amount;
+            localStorage.setItem(`ton_${currentUserId}`, balance);
+            document.getElementById('balance').innerText = balance.toFixed(4);
+        }
+        
+        userAds = userAds.filter(a => a.id !== adId);
+        localStorage.setItem(`user_ads_${currentUserId}`, JSON.stringify(userAds));
+        
+        closeModal('manageAdModal');
+        loadMyAds();
+        showAlert('✅ تم حذف الإعلان');
+    }
+    
+    function showTab(tab) {
+        document.getElementById('packagesTab').style.display = tab === 'packages' ? 'block' : 'none';
+        document.getElementById('channelsTab').style.display = tab === 'channels' ? 'block' : 'none';
+        document.getElementById('myadsTab').style.display = tab === 'myads' ? 'block' : 'none';
+        
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        if (tab === 'packages') document.querySelectorAll('.tab')[0].classList.add('active');
+        else if (tab === 'channels') document.querySelectorAll('.tab')[1].classList.add('active');
+        else document.querySelectorAll('.tab')[2].classList.add('active');
+        
+        if (tab === 'channels') loadChannels();
+        if (tab === 'myads') loadMyAds();
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+    
+    function showAlert(msg) {
+        if (tg && tg.showAlert) {
+            tg.showAlert(msg);
+        } else {
+            alert(msg);
+        }
+    }
+    
+    function goTo(page) {
+        const pages = { 'home': 'index.html', 'tasks': 'tasks.html', 'wheel': 'wheel.html', 'ads': 'ads.html', 'withdraw': 'withdraw.html', 'referral': 'referral.html', 'giftcode': 'giftcode.html', 'admin': 'admin.html', 'ads_posting': 'ads_posting.html' };
+        if (pages[page]) window.location.href = pages[page];
+    }
+    
+    function loadBalance() {
+        let balance = parseFloat(localStorage.getItem(`ton_${currentUserId}`) || '0');
+        document.getElementById('balance').innerText = balance.toFixed(4);
+    }
+    
+    // التهيئة
+    initTelegram();
+    loadPackages();
+    loadBalance();
+    loadChannels();
+    loadMyAds();
+    
+    window.showTab = showTab;
+    window.selectPackage = selectPackage;
+    window.createAd = createAd;
+    window.openManageAd = openManageAd;
+    window.deleteAd = deleteAd;
+    window.closeModal = closeModal;
+    window.goTo = goTo;
+    window.showAlert = showAlert;
+    window.openAddChannelModal = openAddChannelModal;
+    window.addChannel = addChannel;
+    window.deleteChannel = deleteChannel;
+</script>
+</body>
+</html>

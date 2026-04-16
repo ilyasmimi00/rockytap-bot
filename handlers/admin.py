@@ -1,6 +1,6 @@
 # handlers/admin.py
 """
-معالج لوحة التحكم للمشرفين - النسخة الكاملة مع إدارة المهام
+معالج لوحة التحكم للمشرفين - النسخة الكاملة مع إدارة المهام والإعلانات
 """
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
@@ -37,6 +37,10 @@ class AdminHandler:
             InlineKeyboardButton(
                 "👑 فتح لوحة التحكم",
                 web_app=WebAppInfo(url=f"{self.webapp_url}/admin.html")
+            ),
+            InlineKeyboardButton(
+                "📢 إدارة الإعلانات",
+                web_app=WebAppInfo(url=f"{self.webapp_url}/admin_ads.html")
             )
         ]]
         
@@ -71,6 +75,7 @@ class AdminHandler:
         keyboard = [
             [InlineKeyboardButton("👥 إدارة المستخدمين", callback_data='admin_users_menu')],
             [InlineKeyboardButton("📋 إدارة المهام", callback_data='admin_tasks_menu')],
+            [InlineKeyboardButton("📢 إدارة الإعلانات المدفوعة", callback_data='admin_ads_menu')],
             [InlineKeyboardButton("🎁 إعدادات الإحالات", callback_data='admin_referral_menu')],
             [InlineKeyboardButton("💳 طلبات السحب", callback_data='admin_withdrawals_menu')],
             [InlineKeyboardButton("🎫 إدارة الأكواد", callback_data='admin_codes_menu')],
@@ -99,18 +104,27 @@ class AdminHandler:
             await query.answer("⛔ أنت لست مشرفاً", show_alert=True)
             return
         
-        keyboard = [[
-            InlineKeyboardButton(
-                "👑 فتح لوحة التحكم",
-                web_app=WebAppInfo(url=f"{self.webapp_url}/admin.html")
-            )
-        ]]
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "👑 فتح لوحة التحكم الرئيسية",
+                    web_app=WebAppInfo(url=f"{self.webapp_url}/admin.html")
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "📢 فتح إدارة الإعلانات",
+                    web_app=WebAppInfo(url=f"{self.webapp_url}/admin_ads.html")
+                )
+            ]
+        ]
         
         await query.edit_message_text(
             "🌐 اضغط على الزر أدناه لفتح لوحة التحكم المتكاملة:\n\n"
             "📊 يمكنك من هنا:\n"
             "• إدارة المستخدمين\n"
             "• إدارة المهام\n"
+            "• إدارة الإعلانات المدفوعة\n"
             "• تعديل إعدادات الإحالات\n"
             "• معالجة طلبات السحب\n"
             "• إنشاء الأكواد الترويجية\n"
@@ -180,6 +194,38 @@ https://t.me/RockyTap
             [InlineKeyboardButton("➕ إنشاء مهمة جديدة", callback_data='admin_create_task')],
             [InlineKeyboardButton("📋 عرض جميع المهام", callback_data='admin_list_tasks')],
             [InlineKeyboardButton("🌐 فتح لوحة الويب", web_app=WebAppInfo(url=f"{self.webapp_url}/admin.html"))],
+            [InlineKeyboardButton("🔙 رجوع", callback_data='admin_panel')]
+        ]
+        
+        await query.edit_message_text(
+            text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='HTML'
+        )
+    
+    async def ads_menu(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """قائمة إدارة الإعلانات المدفوعة"""
+        query = update.callback_query
+        user_id = query.from_user.id
+        
+        if user_id not in self.admin_ids:
+            await query.answer("⛔ أنت لست مشرفاً", show_alert=True)
+            return
+        
+        text = """
+📢 <b>إدارة الإعلانات المدفوعة</b>
+━━━━━━━━━━━━━━━━━━
+📌 يمكنك إدارة إعلانات المستخدمين من خلال:
+
+• ✅ <b>الموافقة على الإعلانات</b> - قبول الإعلانات بعد التحقق
+• ❌ <b>رفض الإعلانات</b> - رفض الإعلانات مع إضافة سبب
+• 📺 <b>الموافقة على القنوات</b> - قبول قنوات المستخدمين
+• 🗑️ <b>حذف الإعلانات</b> - حذف أي إعلان مخالف
+
+━━━━━━━━━━━━━━━━━━
+📌 استخدم لوحة الويب لإدارة الإعلانات:
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("📢 فتح إدارة الإعلانات", web_app=WebAppInfo(url=f"{self.webapp_url}/admin_ads.html"))],
             [InlineKeyboardButton("🔙 رجوع", callback_data='admin_panel')]
         ]
         
@@ -378,7 +424,6 @@ https://t.me/RockyTap
                     parse_mode='HTML'
                 )
                 
-                # تسجيل في سجل الأدمن
                 self.db.add_admin_log(
                     admin_id=user_id,
                     action="إنشاء مهمة",
@@ -510,6 +555,110 @@ https://t.me/RockyTap
         context.user_data['awaiting_task_deletion'] = False
         return True
     
+    # ==================== معالج WebApp ====================
+    
+    async def handle_webapp_action(self, update: Update, context: ContextTypes.DEFAULT_TYPE, action: str, data: dict):
+        """معالجة الإجراءات الواردة من صفحة الأدمن"""
+        user_id = update.effective_user.id
+        
+        if user_id not in self.admin_ids:
+            await update.message.reply_text("⛔ أنت لست مشرفاً")
+            return
+        
+        logger.info(f"👑 Admin action: {action} from user {user_id}")
+        
+        # إدارة المستخدمين
+        if action == 'admin_add_balance':
+            target_id = int(data.get('user_id', 0))
+            amount = float(data.get('amount', 0))
+            currency = data.get('currency', 'ton')
+            
+            if currency == 'ton':
+                self.db.update_user_balance(target_id, ton_amount=amount, update_earned=True)
+            else:
+                self.db.update_user_balance(target_id, points_amount=amount, update_earned=True)
+            
+            self.db.add_admin_log(user_id, f"إضافة رصيد", f"أضاف {amount} {currency} للمستخدم {target_id}")
+            
+            await update.message.reply_text(json.dumps({
+                'action': 'admin_operation_result',
+                'success': True,
+                'message': f'✅ تم إضافة {amount} {currency} للمستخدم {target_id}'
+            }))
+        
+        elif action == 'admin_ban_user':
+            target_id = int(data.get('user_id', 0))
+            self.db.update_user_block_status(target_id, True)
+            self.db.add_admin_log(user_id, f"حظر مستخدم", f"حظر المستخدم {target_id}")
+            
+            await update.message.reply_text(json.dumps({
+                'action': 'admin_operation_result',
+                'success': True,
+                'message': f'✅ تم حظر المستخدم {target_id}'
+            }))
+        
+        elif action == 'admin_toggle_ban':
+            target_id = int(data.get('user_id', 0))
+            user = self.db.get_user(target_id)
+            if user:
+                new_status = not user.get('is_blocked', False)
+                self.db.update_user_block_status(target_id, new_status)
+            
+            await update.message.reply_text(json.dumps({
+                'action': 'admin_operation_result',
+                'success': True,
+                'message': '✅ تم تغيير حالة المستخدم'
+            }))
+        
+        # إعدادات الإحالات
+        elif action == 'admin_save_referral':
+            settings = data
+            success = self.db.save_referral_settings(
+                reward_type=settings.get('reward_type', 'both'),
+                points_value=settings.get('points_value', 100),
+                ton_value=settings.get('ton_value', 0.01),
+                required_tasks=settings.get('required_tasks', 6)
+            )
+            
+            await update.message.reply_text(json.dumps({
+                'action': 'admin_operation_result',
+                'success': success,
+                'message': '✅ تم حفظ إعدادات الإحالات' if success else '❌ حدث خطأ'
+            }))
+        
+        # إدارة الأكواد
+        elif action == 'admin_create_code':
+            amount = float(data.get('amount', 0))
+            max_uses = int(data.get('max_uses', 100))
+            
+            success, code = self.db.create_gift_code(
+                created_by=user_id,
+                reward_ton=amount,
+                max_uses=max_uses,
+                is_admin=True
+            )
+            
+            await update.message.reply_text(json.dumps({
+                'action': 'admin_operation_result',
+                'success': success,
+                'message': f'✅ تم إنشاء الكود: <code>{code}</code>' if success else '❌ حدث خطأ'
+            }))
+        
+        # إعدادات النظام
+        elif action == 'admin_save_settings':
+            await update.message.reply_text(json.dumps({
+                'action': 'admin_operation_result',
+                'success': True,
+                'message': '✅ تم حفظ جميع الإعدادات'
+            }))
+        
+        else:
+            await update.message.reply_text(json.dumps({
+                'action': 'admin_operation_result',
+                'success': False,
+                'message': f'❌ إجراء غير معروف: {action}'
+            }))
+    
     # ==================== معالج الأزرار ====================
     
     async def handle_admin_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -522,23 +671,16 @@ https://t.me/RockyTap
             await query.answer("⛔ أنت لست مشرفاً", show_alert=True)
             return
         
-        # قائمة المهام
-        if data == 'admin_tasks_menu':
-            await self.tasks_menu(update, context)
-        elif data == 'admin_create_task':
-            await self.create_task_input(update, context)
-        elif data == 'admin_list_tasks':
-            await self.list_tasks(update, context)
-        elif data == 'admin_delete_task_form':
-            await self.delete_task_form(update, context)
-        
-        # القوائم الأخرى
-        elif data == 'admin_panel':
+        if data == 'admin_panel':
             await self.show_admin_panel(update, context)
         elif data == 'admin_open_webapp':
             await self.open_webapp(update, context)
         elif data == 'admin_users_menu':
             await self.users_menu(update, context)
+        elif data == 'admin_tasks_menu':
+            await self.tasks_menu(update, context)
+        elif data == 'admin_ads_menu':
+            await self.ads_menu(update, context)
         elif data == 'admin_referral_menu':
             await self.referral_menu(update, context)
         elif data == 'admin_withdrawals_menu':
@@ -547,5 +689,11 @@ https://t.me/RockyTap
             await self.codes_menu(update, context)
         elif data == 'admin_settings_menu':
             await self.settings_menu(update, context)
+        elif data == 'admin_create_task':
+            await self.create_task_input(update, context)
+        elif data == 'admin_list_tasks':
+            await self.list_tasks(update, context)
+        elif data == 'admin_delete_task_form':
+            await self.delete_task_form(update, context)
         else:
             await query.answer("❓ إجراء غير معروف", show_alert=True)

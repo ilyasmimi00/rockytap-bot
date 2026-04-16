@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RockyTap - إدارة الإعلانات</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="config.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
+            font-family: 'Cairo', sans-serif;
+            padding: 15px;
+            padding-bottom: 80px;
+            color: white;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #0A0F1A;
+            padding: 12px 20px;
+            border-bottom: 1px solid #00BFFF;
+            z-index: 1000;
+            text-align: center;
+        }
+        .header h3 { color: #00BFFF; margin: 0; }
+        .header-spacer { height: 60px; }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #00BFFF33;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .tab.active {
+            color: #00BFFF;
+            border-bottom: 2px solid #00BFFF;
+        }
+        
+        .request-card {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border: 1px solid #00BFFF33;
+        }
+        .request-user { font-size: 16px; font-weight: bold; color: #00BFFF; }
+        .request-channel { margin: 5px 0; }
+        .request-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 11px;
+        }
+        .status-pending { background: #f39c1233; color: #f39c12; }
+        
+        .btn-sm {
+            padding: 6px 15px;
+            font-size: 12px;
+            margin: 3px;
+        }
+        .btn-success { background: #2ecc71; }
+        .btn-danger { background: #e74c3c; }
+        .btn-warning { background: #f39c12; }
+        
+        textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #00BFFF;
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0A0F1A;
+            border-top: 1px solid #00BFFF;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+        .nav-item {
+            text-align: center;
+            color: #666;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .nav-item.active { color: #00BFFF; }
+        .nav-item i { font-size: 22px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h3>👑 إدارة الإعلانات</h3>
+</div>
+<div class="header-spacer"></div>
+
+<div class="container">
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('channels')">📺 طلبات القنوات</div>
+        <div class="tab" onclick="showTab('ads')">📋 طلبات الإعلانات</div>
+    </div>
+
+    <!-- طلبات القنوات -->
+    <div id="channelsTab">
+        <div id="channelRequestsList"></div>
+    </div>
+
+    <!-- طلبات الإعلانات -->
+    <div id="adsTab" style="display:none;">
+        <div id="adRequestsList"></div>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div>
+    <div class="nav-item" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div>
+    <div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div>
+    <div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div>
+    <div class="nav-item active" onclick="goTo('admin_ads')"><i class="fas fa-crown"></i><div>إدارة</div></div>
+</div>
+
+<script>
+    let tg = null;
+    let currentUserId = null;
+    
+    function initTelegram() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            tg = window.Telegram.WebApp;
+            tg.expand();
+            tg.ready();
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                currentUserId = tg.initDataUnsafe.user.id;
+            }
+        }
+        if (!currentUserId) {
+            currentUserId = localStorage.getItem('adminId') || 8268443100;
+        }
+    }
+    
+    // تحميل طلبات القنوات
+    function loadChannelRequests() {
+        let requests = JSON.parse(localStorage.getItem('all_channel_requests') || '[]');
+        let pendingRequests = requests.filter(r => r.status === 'pending');
+        
+        const container = document.getElementById('channelRequestsList');
+        if (pendingRequests.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">📺 لا توجد طلبات قنوات معلقة</div>';
+            return;
+        }
+        
+        let html = '';
+        for (let req of pendingRequests) {
+            html += `
+                <div class="request-card" id="req_${req.id}">
+                    <div class="request-user">👤 ${req.user_username || req.user_id}</div>
+                    <div class="request-channel">📺 ${req.channel_name || req.channel_username}</div>
+                    <div>🔗 ${req.channel_link}</div>
+                    <div><span class="request-status status-pending">⏳ قيد المراجعة</span></div>
+                    <div style="margin-top:10px;">
+                        <textarea id="note_${req.id}" rows="2" placeholder="ملاحظة (اختياري)"></textarea>
+                        <button class="btn-sm btn-success" onclick="approveChannel(${req.id})">✅ قبول</button>
+                        <button class="btn-sm btn-danger" onclick="rejectChannel(${req.id})">❌ رفض</button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+    
+    function approveChannel(requestId) {
+        let note = document.getElementById(`note_${requestId}`)?.value || '';
+        
+        let requests = JSON.parse(localStorage.getItem('all_channel_requests') || '[]');
+        let requestIndex = requests.findIndex(r => r.id === requestId);
+        
+        if (requestIndex !== -1) {
+            requests[requestIndex].status = 'approved';
+            requests[requestIndex].admin_note = note;
+            requests[requestIndex].reviewed_at = new Date().toISOString();
+            localStorage.setItem('all_channel_requests', JSON.stringify(requests));
+            
+            // تحديث قنوات المستخدم
+            let userChannels = JSON.parse(localStorage.getItem(`user_channels_${requests[requestIndex].user_id}`) || '[]');
+            let channelIndex = userChannels.findIndex(c => c.id === requestId);
+            if (channelIndex !== -1) {
+                userChannels[channelIndex].status = 'approved';
+                userChannels[channelIndex].admin_note = note;
+                localStorage.setItem(`user_channels_${requests[requestIndex].user_id}`, JSON.stringify(userChannels));
+            }
+            
+            showAlert('✅ تم قبول القناة');
+            loadChannelRequests();
+        }
+    }
+    
+    function rejectChannel(requestId) {
+        let note = document.getElementById(`note_${requestId}`)?.value || '';
+        
+        let requests = JSON.parse(localStorage.getItem('all_channel_requests') || '[]');
+        let requestIndex = requests.findIndex(r => r.id === requestId);
+        
+        if (requestIndex !== -1) {
+            requests[requestIndex].status = 'rejected';
+            requests[requestIndex].admin_note = note;
+            requests[requestIndex].reviewed_at = new Date().toISOString();
+            localStorage.setItem('all_channel_requests', JSON.stringify(requests));
+            
+            // تحديث قنوات المستخدم
+            let userChannels = JSON.parse(localStorage.getItem(`user_channels_${requests[requestIndex].user_id}`) || '[]');
+            let channelIndex = userChannels.findIndex(c => c.id === requestId);
+            if (channelIndex !== -1) {
+                userChannels[channelIndex].status = 'rejected';
+                userChannels[channelIndex].admin_note = note;
+                localStorage.setItem(`user_channels_${requests[requestIndex].user_id}`, JSON.stringify(userChannels));
+            }
+            
+            showAlert('❌ تم رفض القناة');
+            loadChannelRequests();
+        }
+    }
+    
+    // تحميل طلبات الإعلانات
+    function loadAdRequests() {
+        // جلب جميع الإعلانات من جميع المستخدمين
+        let allAds = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            let key = localStorage.key(i);
+            if (key && key.startsWith('user_ads_')) {
+                let ads = JSON.parse(localStorage.getItem(key) || '[]');
+                for (let ad of ads) {
+                    if (ad.status === 'pending') {
+                        ad.user_id = key.split('_')[2];
+                        allAds.push(ad);
+                    }
+                }
+            }
+        }
+        
+        const container = document.getElementById('adRequestsList');
+        if (allAds.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">📋 لا توجد طلبات إعلانات معلقة</div>';
+            return;
+        }
+        
+        let html = '';
+        for (let ad of allAds) {
+            html += `
+                <div class="request-card" id="ad_${ad.id}">
+                    <div class="request-user">👤 المستخدم: ${ad.user_id}</div>
+                    <div class="request-channel">📢 ${ad.title}</div>
+                    <div>📝 ${ad.description || 'لا يوجد وصف'}</div>
+                    <div>🔗 ${ad.channel_username}</div>
+                    <div>👁️ ${ad.views_count} مشاهدة | 💰 ${ad.paid_amount} TON</div>
+                    <div><span class="request-status status-pending">⏳ قيد المراجعة</span></div>
+                    <div style="margin-top:10px;">
+                        <textarea id="ad_note_${ad.id}" rows="2" placeholder="ملاحظة (اختياري)"></textarea>
+                        <button class="btn-sm btn-success" onclick="approveAd(${ad.id}, '${ad.user_id}')">✅ قبول</button>
+                        <button class="btn-sm btn-danger" onclick="rejectAd(${ad.id}, '${ad.user_id}')">❌ رفض</button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+    
+    function approveAd(adId, userId) {
+        let note = document.getElementById(`ad_note_${adId}`)?.value || '';
+        
+        let userAds = JSON.parse(localStorage.getItem(`user_ads_${userId}`) || '[]');
+        let adIndex = userAds.findIndex(a => a.id === adId);
+        
+        if (adIndex !== -1) {
+            userAds[adIndex].status = 'active';
+            userAds[adIndex].admin_note = note;
+            localStorage.setItem(`user_ads_${userId}`, JSON.stringify(userAds));
+            
+            showAlert('✅ تم قبول الإعلان');
+            loadAdRequests();
+        }
+    }
+    
+    function rejectAd(adId, userId) {
+        let note = document.getElementById(`ad_note_${adId}`)?.value || '';
+        
+        let userAds = JSON.parse(localStorage.getItem(`user_ads_${userId}`) || '[]');
+        let adIndex = userAds.findIndex(a => a.id === adId);
+        
+        if (adIndex !== -1) {
+            userAds[adIndex].status = 'rejected';
+            userAds[adIndex].admin_note = note;
+            localStorage.setItem(`user_ads_${userId}`, JSON.stringify(userAds));
+            
+            // استرداد الرصيد
+            let balance = parseFloat(localStorage.getItem(`ton_${userId}`) || '0');
+            balance += userAds[adIndex].paid_amount;
+            localStorage.setItem(`ton_${userId}`, balance);
+            
+            showAlert('❌ تم رفض الإعلان وتم استرداد الرصيد');
+            loadAdRequests();
+        }
+    }
+    
+    function showTab(tab) {
+        document.getElementById('channelsTab').style.display = tab === 'channels' ? 'block' : 'none';
+        document.getElementById('adsTab').style.display = tab === 'ads' ? 'block' : 'none';
+        
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        if (tab === 'channels') {
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            loadChannelRequests();
+        } else {
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            loadAdRequests();
+        }
+    }
+    
+    function showAlert(msg) {
+        if (tg && tg.showAlert) {
+            tg.showAlert(msg);
+        } else {
+            alert(msg);
+        }
+    }
+    
+    function goTo(page) {
+        const pages = { 'home': 'index.html', 'tasks': 'tasks.html', 'wheel': 'wheel.html', 'ads': 'ads.html', 'withdraw': 'withdraw.html', 'referral': 'referral.html', 'giftcode': 'giftcode.html', 'admin': 'admin.html', 'admin_ads': 'admin_ads.html' };
+        if (pages[page]) window.location.href = pages[page];
+    }
+    
+    initTelegram();
+    loadChannelRequests();
+    
+    window.showTab = showTab;
+    window.approveChannel = approveChannel;
+    window.rejectChannel = rejectChannel;
+    window.approveAd = approveAd;
+    window.rejectAd = rejectAd;
+    window.goTo = goTo;
+</script>
+</body>
+</html>

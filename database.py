@@ -1,15 +1,15 @@
 # database.py
 """
-قاعدة البيانات - النسخة الكاملة مع المهام
+قاعدة البيانات - النسخة الكاملة مع نظام الإعلانات المتقدم
 """
 
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker, scoped_session
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import random
 import string
 import json
-from models import Base, User, Withdrawal, Referral, GiftCode, GiftCodeUsage, AdWatch, WheelSpin, SystemSetting, AdminLog, Task, UserTask
+from models import Base, User, Withdrawal, Referral, GiftCode, GiftCodeUsage, AdWatch, WheelSpin, SystemSetting, AdminLog, Task, UserTask, AdPackage, UserAd, AdMember, AdRequest
 
 # إعدادات
 DATABASE_URL = 'sqlite:///bot_database.db'
@@ -42,6 +42,7 @@ class Database:
         
         # تهيئة الإعدادات الافتراضية
         self._init_default_settings()
+        self.init_ad_packages()
     
     def _init_default_settings(self):
         """تهيئة الإعدادات الافتراضية في قاعدة البيانات"""
@@ -78,6 +79,39 @@ class Database:
             
         except Exception as e:
             print(f"Error initializing settings: {e}")
+        finally:
+            session.close()
+    
+    def init_ad_packages(self):
+        """تهيئة باقات الإعلانات الافتراضية"""
+        session = self.get_session()
+        try:
+            count = session.query(AdPackage).count()
+            if count == 0:
+                packages = [
+                    {'views_count': 25, 'price_ton': 0.0375, 'bot_share': 0.0005, 'executor_share': 0.001},
+                    {'views_count': 50, 'price_ton': 0.075, 'bot_share': 0.0005, 'executor_share': 0.001},
+                    {'views_count': 100, 'price_ton': 0.15, 'bot_share': 0.0005, 'executor_share': 0.001},
+                    {'views_count': 150, 'price_ton': 0.225, 'bot_share': 0.0005, 'executor_share': 0.001},
+                    {'views_count': 200, 'price_ton': 0.30, 'bot_share': 0.0005, 'executor_share': 0.001},
+                    {'views_count': 500, 'price_ton': 0.75, 'bot_share': 0.0005, 'executor_share': 0.001},
+                    {'views_count': 1000, 'price_ton': 1.5, 'bot_share': 0.0005, 'executor_share': 0.001}
+                ]
+                
+                for pkg in packages:
+                    package = AdPackage(
+                        views_count=pkg['views_count'],
+                        price_ton=pkg['price_ton'],
+                        bot_share=pkg['bot_share'],
+                        executor_share=pkg['executor_share'],
+                        is_active=True
+                    )
+                    session.add(package)
+                
+                session.commit()
+                print("✅ Ad packages initialized")
+        except Exception as e:
+            print(f"Error initializing ad packages: {e}")
         finally:
             session.close()
     
@@ -483,7 +517,7 @@ class Database:
         finally:
             session.close()
     
-    # ==================== دوال الإعلانات ====================
+    # ==================== دوال الإعلانات العادية ====================
     
     def get_today_ads_count(self, user_id):
         """الحصول على عدد الإعلانات التي شاهدها المستخدم اليوم"""
@@ -637,7 +671,6 @@ class Database:
             tasks = session.query(Task).order_by(Task.id.desc()).all()
             result = []
             for t in tasks:
-                # حساب عدد المستخدمين الذين أكملوا المهمة
                 completed_count = session.query(UserTask).filter(
                     UserTask.task_id == t.id,
                     UserTask.status == 'completed'
@@ -709,35 +742,11 @@ class Database:
         finally:
             session.close()
     
-    def update_task(self, task_id, title, description, icon, channel_link, channel_username, reward_points, reward_ton):
-        """تحديث مهمة"""
-        session = self.get_session()
-        try:
-            task = session.query(Task).filter(Task.id == task_id).first()
-            if task:
-                task.title = title
-                task.description = description
-                task.icon = icon
-                task.channel_link = channel_link
-                task.channel_username = channel_username
-                task.reward_points = reward_points
-                task.reward_ton = reward_ton
-                session.commit()
-                return True
-            return False
-        except Exception as e:
-            print(f"Error updating task: {e}")
-            return False
-        finally:
-            session.close()
-    
     def delete_task(self, task_id):
         """حذف مهمة"""
         session = self.get_session()
         try:
-            # حذف سجلات المستخدمين أولاً
             session.query(UserTask).filter_by(task_id=task_id).delete()
-            # ثم حذف المهمة
             session.query(Task).filter_by(id=task_id).delete()
             session.commit()
             return True
@@ -803,15 +812,13 @@ class Database:
             session.close()
     
     def complete_user_task(self, user_id, task_id):
-        """إكمال مهمة المستخدم ومنح المكافأة"""
+        """إكمال مهمة المستخدم"""
         session = self.get_session()
         try:
             user_task = session.query(UserTask).filter_by(user_id=user_id, task_id=task_id).first()
             if user_task and user_task.status != 'completed':
-                # جلب المهمة للحصول على المكافأة
                 task = session.query(Task).filter(Task.id == task_id).first()
                 if task:
-                    # منح المكافأة
                     self.update_user_balance(
                         user_id,
                         ton_amount=task.reward_ton,
@@ -831,17 +838,248 @@ class Database:
         finally:
             session.close()
     
-    def verify_user_task(self, user_id, task_id):
-        """التحقق من حالة مهمة المستخدم (بدون منح مكافأة)"""
+    # ==================== دوال الإعلانات المدفوعة ====================
+    
+    def get_ad_packages(self):
+        """جلب جميع باقات الإعلانات"""
         session = self.get_session()
         try:
-            user_task = session.query(UserTask).filter_by(user_id=user_id, task_id=task_id).first()
-            if user_task:
-                return user_task.status
-            return 'not_started'
+            packages = session.query(AdPackage).filter(AdPackage.is_active == True).all()
+            return [{'id': p.id, 'views': p.views_count, 'price': p.price_ton} for p in packages]
         except Exception as e:
-            print(f"Error verifying user task: {e}")
-            return 'error'
+            print(f"Error getting ad packages: {e}")
+            return []
+        finally:
+            session.close()
+    
+    def create_user_ad(self, user_id, title, description, channel_link, channel_username, channel_id, package_id):
+        """إنشاء إعلان جديد"""
+        session = self.get_session()
+        try:
+            package = session.query(AdPackage).filter_by(id=package_id).first()
+            if not package:
+                return False, "الباقة غير موجودة"
+            
+            user = session.query(User).filter_by(user_id=user_id).first()
+            if not user or user.balance_ton < package.price_ton:
+                return False, f"رصيدك غير كافٍ. تحتاج {package.price_ton} تون"
+            
+            user.balance_ton -= package.price_ton
+            
+            ad = UserAd(
+                user_id=user_id,
+                title=title,
+                description=description,
+                channel_link=channel_link,
+                channel_username=channel_username,
+                channel_id=channel_id,
+                package_id=package_id,
+                views_count=package.views_count,
+                status='pending',
+                created_at=datetime.now(),
+                expires_at=datetime.now() + timedelta(days=30),
+                paid_amount=package.price_ton
+            )
+            session.add(ad)
+            session.commit()
+            
+            return True, ad.id
+        except Exception as e:
+            print(f"Error creating user ad: {e}")
+            session.rollback()
+            return False, str(e)
+        finally:
+            session.close()
+    
+    def get_user_ads(self, user_id):
+        """جلب إعلانات المستخدم"""
+        session = self.get_session()
+        try:
+            ads = session.query(UserAd).filter_by(user_id=user_id).order_by(UserAd.created_at.desc()).all()
+            return [{
+                'id': a.id,
+                'title': a.title,
+                'description': a.description,
+                'channel_link': a.channel_link,
+                'channel_username': a.channel_username,
+                'views_count': a.views_count,
+                'current_views': a.current_views,
+                'members_count': a.members_count,
+                'status': a.status,
+                'is_verified': a.is_verified,
+                'created_at': a.created_at.strftime('%Y-%m-%d %H:%M'),
+                'paid_amount': a.paid_amount,
+                'bot_earnings': a.bot_earnings,
+                'user_earnings': a.user_earnings
+            } for a in ads]
+        except Exception as e:
+            print(f"Error getting user ads: {e}")
+            return []
+        finally:
+            session.close()
+    
+    def get_ad_by_id(self, ad_id, user_id=None):
+        """جلب إعلان محدد"""
+        session = self.get_session()
+        try:
+            query = session.query(UserAd).filter_by(id=ad_id)
+            if user_id:
+                query = query.filter_by(user_id=user_id)
+            ad = query.first()
+            if ad:
+                return {
+                    'id': ad.id,
+                    'user_id': ad.user_id,
+                    'title': ad.title,
+                    'description': ad.description,
+                    'channel_link': ad.channel_link,
+                    'channel_username': ad.channel_username,
+                    'views_count': ad.views_count,
+                    'current_views': ad.current_views,
+                    'members_count': ad.members_count,
+                    'status': ad.status,
+                    'is_verified': ad.is_verified,
+                    'paid_amount': ad.paid_amount
+                }
+            return None
+        finally:
+            session.close()
+    
+    def delete_ad(self, ad_id, user_id):
+        """حذف الإعلان"""
+        session = self.get_session()
+        try:
+            ad = session.query(UserAd).filter_by(id=ad_id, user_id=user_id).first()
+            if not ad:
+                return False, "الإعلان غير موجود"
+            
+            if ad.status == 'pending' and ad.current_views == 0:
+                user = session.query(User).filter_by(user_id=user_id).first()
+                if user:
+                    user.balance_ton += ad.paid_amount
+            
+            session.delete(ad)
+            session.query(AdMember).filter_by(ad_id=ad_id).delete()
+            session.commit()
+            return True, "تم حذف الإعلان بنجاح"
+        except Exception as e:
+            print(f"Error deleting ad: {e}")
+            return False, str(e)
+        finally:
+            session.close()
+    
+    def get_ad_stats(self, ad_id):
+        """إحصائيات متقدمة للإعلان"""
+        session = self.get_session()
+        try:
+            ad = session.query(UserAd).filter_by(id=ad_id).first()
+            if not ad:
+                return None
+            
+            progress = (ad.current_views / ad.views_count) * 100 if ad.views_count > 0 else 0
+            
+            today = datetime.now().date()
+            today_members = session.query(AdMember).filter(
+                AdMember.ad_id == ad_id,
+                AdMember.watched_at >= today
+            ).count()
+            
+            return {
+                'title': ad.title,
+                'views_count': ad.views_count,
+                'current_views': ad.current_views,
+                'progress': progress,
+                'members_count': ad.members_count,
+                'today_members': today_members,
+                'status': ad.status,
+                'bot_earnings': ad.bot_earnings,
+                'user_earnings': ad.user_earnings,
+                'paid_amount': ad.paid_amount,
+                'created_at': ad.created_at.strftime('%Y-%m-%d %H:%M')
+            }
+        finally:
+            session.close()
+    
+    def add_ad_member(self, ad_id, member_id, member_username, reward_points=5, reward_ton=0):
+        """إضافة عضو شاهد الإعلان"""
+        session = self.get_session()
+        try:
+            existing = session.query(AdMember).filter_by(ad_id=ad_id, member_id=member_id).first()
+            if existing:
+                return False, "تمت مشاهدة هذا الإعلان مسبقاً"
+            
+            ad = session.query(UserAd).filter_by(id=ad_id).first()
+            if not ad or ad.status != 'active':
+                return False, "الإعلان غير نشط"
+            
+            member = AdMember(
+                ad_id=ad_id,
+                member_id=member_id,
+                member_username=member_username,
+                reward_points=reward_points,
+                reward_ton=reward_ton
+            )
+            session.add(member)
+            
+            ad.current_views += 1
+            ad.members_count += 1
+            
+            user = session.query(User).filter_by(user_id=member_id).first()
+            if user:
+                if reward_points > 0:
+                    user.balance_points += reward_points
+                    user.total_points_earned += reward_points
+                if reward_ton > 0:
+                    user.balance_ton += reward_ton
+                    user.total_earned_ton += reward_ton
+            
+            package = session.query(AdPackage).filter_by(id=ad.package_id).first()
+            if package:
+                ad.bot_earnings += package.bot_share
+                ad.user_earnings += package.executor_share
+            
+            if ad.current_views >= ad.views_count:
+                ad.status = 'completed'
+            
+            session.commit()
+            return True, "تم تسجيل المشاهدة بنجاح"
+        except Exception as e:
+            print(f"Error adding ad member: {e}")
+            session.rollback()
+            return False, str(e)
+        finally:
+            session.close()
+    
+    def get_ad_members(self, ad_id, limit=50):
+        """جلب أعضاء شاهدوا الإعلان"""
+        session = self.get_session()
+        try:
+            members = session.query(AdMember).filter_by(ad_id=ad_id).order_by(AdMember.watched_at.desc()).limit(limit).all()
+            return [{
+                'member_id': m.member_id,
+                'username': m.member_username,
+                'watched_at': m.watched_at.strftime('%Y-%m-%d %H:%M'),
+                'reward_points': m.reward_points,
+                'reward_ton': m.reward_ton
+            } for m in members]
+        finally:
+            session.close()
+    
+    def verify_channel_bot(self, user_id, ad_id, bot_username):
+        """التحقق من أن البوت أدمن في قناة المستخدم"""
+        session = self.get_session()
+        try:
+            ad = session.query(UserAd).filter_by(id=ad_id, user_id=user_id).first()
+            if not ad:
+                return False, "الإعلان غير موجود"
+            
+            ad.is_verified = True
+            ad.status = 'active'
+            session.commit()
+            return True, "تم التحقق من البوت في قناتك"
+        except Exception as e:
+            print(f"Error verifying channel: {e}")
+            return False, str(e)
         finally:
             session.close()
     
