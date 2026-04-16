@@ -6,7 +6,8 @@
     <title>RockyTap - المهام</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="config.js"></script>
+    <!-- تأكد من أن مسار config.js صحيح -->
+    <script src="/config.js"></script>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -330,19 +331,22 @@
 </div>
 
 <script>
-    let tg = null;
+    // تجنب إعادة تعريف tg
     let currentUserId = null;
     let tasks = [];
     let completedTasks = [];
     
+    // رابط API مباشر (كد احتياطي)
+    const API_URL_DIRECT = 'http://158.220.120.209:5000/api';
+    
     // تهيئة
     function initTelegram() {
         if (window.Telegram && window.Telegram.WebApp) {
-            tg = window.Telegram.WebApp;
-            tg.expand();
-            tg.ready();
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                currentUserId = tg.initDataUnsafe.user.id;
+            const tgInstance = window.Telegram.WebApp;
+            tgInstance.expand();
+            tgInstance.ready();
+            if (tgInstance.initDataUnsafe && tgInstance.initDataUnsafe.user) {
+                currentUserId = tgInstance.initDataUnsafe.user.id;
                 window.currentUserId = currentUserId;
             }
         }
@@ -353,34 +357,29 @@
         console.log('Tasks page - User ID:', currentUserId);
     }
     
-    // تحميل المهام من API
-    async function loadTasksFromAPI() {
-        const container = document.getElementById('tasksList');
-        if (container) {
-            container.innerHTML = '<div class="loading">📡 جاري التحميل...</div>';
+    // دالة API محلية (لا تعتمد على config.js)
+    async function callAPI(endpoint, data = null, method = 'GET') {
+        const url = `${API_URL_DIRECT}/${endpoint}`;
+        const options = {
+            method: method,
+            headers: { 'Content-Type': 'application/json' }
+        };
+        if (data && (method === 'POST' || method === 'PUT')) {
+            options.body = JSON.stringify(data);
         }
-        
         try {
-            console.log('🔄 Fetching tasks from API...');
-            const result = await apiCall(`tasks?user_id=${currentUserId}`, null, 'GET');
-            console.log('📡 API Response:', result);
-            
-            if (result && result.success && result.tasks && result.tasks.length > 0) {
-                tasks = result.tasks;
-                console.log('✅ Tasks loaded from API:', tasks.length);
-            } else {
-                console.warn('⚠️ No tasks from API, using fallback');
-                tasks = getFallbackTasks();
-            }
-        } catch(e) {
-            console.error('❌ Error loading tasks from API:', e);
-            tasks = getFallbackTasks();
+            console.log(`📡 API Call: ${method} ${url}`);
+            const response = await fetch(url, options);
+            const result = await response.json();
+            console.log(`📡 API Response:`, result);
+            return result;
+        } catch (error) {
+            console.error('API Error:', error);
+            return { success: false, message: 'خطأ في الاتصال' };
         }
-        
-        // تحميل المهام المكتملة
-        loadCompletedTasks();
     }
     
+    // بيانات احتياطية
     function getFallbackTasks() {
         return [
             { id: 1, title: "قناة RockyTap", description: "اشترك في القناة الرسمية", icon: "📺", channel_link: "https://t.me/RockyTap", channel_username: "@RockyTap", reward: 100, reward_ton: 0, status: "available" },
@@ -389,12 +388,34 @@
         ];
     }
     
+    // تحميل المهام
+    async function loadTasksFromAPI() {
+        const container = document.getElementById('tasksList');
+        if (container) {
+            container.innerHTML = '<div class="loading">📡 جاري التحميل...</div>';
+        }
+        
+        try {
+            const result = await callAPI(`tasks?user_id=${currentUserId}`, null, 'GET');
+            
+            if (result && result.success && result.tasks && result.tasks.length > 0) {
+                tasks = result.tasks;
+                console.log('✅ Tasks loaded from API:', tasks.length);
+            } else {
+                tasks = getFallbackTasks();
+            }
+        } catch(e) {
+            console.error('Error loading tasks:', e);
+            tasks = getFallbackTasks();
+        }
+        
+        loadCompletedTasks();
+    }
+    
     function loadCompletedTasks() {
         const saved = localStorage.getItem(`completed_tasks_${currentUserId}`);
         if (saved) {
             completedTasks = JSON.parse(saved);
-        } else {
-            completedTasks = [];
         }
         updateTasksStatus();
     }
@@ -515,14 +536,13 @@
         let rewardTon = task.reward_ton || 0;
         
         try {
-            const result = await apiCall('complete_task', {
+            const result = await callAPI('complete_task', {
                 user_id: currentUserId,
                 task_id: taskId,
                 reward: rewardPoints
             }, 'POST');
             
             if (result && result.success) {
-                // تحديث الرصيد المحلي
                 let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
                 currentPoints += rewardPoints;
                 localStorage.setItem(`points_${currentUserId}`, currentPoints);
@@ -546,7 +566,6 @@
                 completeTaskLocally(task, rewardPoints, rewardTon);
             }
         } catch(e) {
-            console.error('Error verifying task:', e);
             completeTaskLocally(task, rewardPoints, rewardTon);
         }
     }
@@ -577,8 +596,9 @@
     }
     
     function showAlert(msg) {
-        if (tg && tg.showAlert) {
-            tg.showAlert(msg);
+        const tgInstance = window.Telegram?.WebApp;
+        if (tgInstance && tgInstance.showAlert) {
+            tgInstance.showAlert(msg);
         } else {
             alert(msg);
         }
@@ -586,17 +606,19 @@
     
     function goTo(page) {
         const pages = { 
-            'home': 'index.html', 
-            'tasks': 'tasks.html', 
-            'wheel': 'wheel.html', 
-            'ads': 'ads.html', 
-            'ads_posting': 'ads_posting.html',
-            'withdraw': 'withdraw.html', 
-            'referral': 'referral.html', 
-            'giftcode': 'giftcode.html', 
-            'admin': 'admin.html' 
+            'home': '/index.html', 
+            'tasks': '/tasks.html', 
+            'wheel': '/wheel.html', 
+            'ads': '/ads.html', 
+            'ads_posting': '/ads_posting.html',
+            'withdraw': '/withdraw.html', 
+            'referral': '/referral.html', 
+            'giftcode': '/giftcode.html', 
+            'admin': '/admin.html' 
         };
-        if (pages[page]) window.location.href = pages[page];
+        if (pages[page]) {
+            window.location.href = pages[page];
+        }
     }
     
     function toggleLanguage() {
