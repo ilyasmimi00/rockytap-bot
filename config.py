@@ -1,6 +1,6 @@
 # config.py
 """
-إعدادات البوت
+إعدادات البوت - النسخة النهائية مع Cloudflare
 """
 
 import os
@@ -8,14 +8,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# توكن البوت
-BOT_TOKEN = os.getenv('BOT_TOKEN')
+# ==================== إعدادات البوت الأساسية ====================
 
-# معرفات الأدمن
+# توكن البوت
+BOT_TOKEN = os.getenv('BOT_TOKEN', '7711921898:AAHjbn3KpOU5vWcr-NZc4B9E5MQ6nNaV_aM')
+
+# معرفات الأدمن (ضع معرفات الأدمن هنا مفصولة بفواصل)
 ADMIN_IDS = [int(id) for id in os.getenv('ADMIN_IDS', '8268443100').split(',')]
 
-# رابط موقع Netlify
-WEBAPP_URL = os.getenv('WEBAPP_URL', 'https://melodic-llama-b16158.netlify.app')
+# رابط التطبيق على Cloudflare Pages
+WEBAPP_URL = 'https://rockytap-bot.elias-guerbas.workers.dev'
 
 # اسم البوت
 BOT_NAME = "RockyTap"
@@ -26,7 +28,7 @@ POINTS_TO_TON_RATE = 10  # 10 نقاط = 1 تون
 
 # ==================== إعدادات السحب ====================
 
-WITHDRAWAL_MIN = 0.02  # الحد الأدنى للسحب
+WITHDRAWAL_MIN = 0.02  # الحد الأدنى للسحب بالتون
 
 # ==================== إعدادات الإعلانات ====================
 
