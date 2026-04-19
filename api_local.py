@@ -1,4 +1,4 @@
-# api_local.py - خادم API محلي كامل مع المهام
+# api_local.py - خادم API محلي كامل لـ VPS
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -8,11 +8,11 @@ import random
 import socket
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # السماح بجميع الطلبات من أي مصدر
 
 db = Database()
 
-# معرفات الأدمن (ضع معرفات الأدمن هنا)
+# معرفات الأدمن
 ADMIN_IDS = [8268443100]
 
 # ==================== واجهات API الأساسية ====================
@@ -20,6 +20,10 @@ ADMIN_IDS = [8268443100]
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'ok', 'timestamp': datetime.now().isoformat()})
+
+@app.route('/api/', methods=['GET'])
+def api_root():
+    return jsonify({'status': 'ok', 'message': 'API is running'})
 
 @app.route('/api/user', methods=['GET'])
 def get_user():
@@ -42,6 +46,92 @@ def get_user():
             'ads_watched': today_ads,
             'daily_limit': 10
         })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/user_ads', methods=['GET'])
+def get_user_ads():
+    """جلب إعلانات المستخدم"""
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'message': 'user_id مطلوب'})
+    
+    try:
+        ads = db.get_user_ads(int(user_id))
+        return jsonify({'success': True, 'ads': ads})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e), 'ads': []})
+
+@app.route('/api/create_ad', methods=['POST'])
+def create_ad():
+    """إنشاء إعلان جديد"""
+    data = request.get_json()
+    user_id = data.get('user_id')
+    package_id = data.get('package_id')
+    title = data.get('title')
+    description = data.get('description', '')
+    channel_link = data.get('channel_link')
+    monitor_people = data.get('monitor_people', False)
+    
+    if not user_id or not package_id or not title or not channel_link:
+        return jsonify({'success': False, 'message': 'بيانات ناقصة'})
+    
+    try:
+        packages = db.get_ad_packages()
+        package = next((p for p in packages if p['id'] == package_id), None)
+        if not package:
+            return jsonify({'success': False, 'message': 'الباقة غير موجودة'})
+        
+        user = db.get_user(int(user_id))
+        if not user or user['balance_ton'] < package['price']:
+            return jsonify({'success': False, 'message': f'رصيد غير كافٍ. تحتاج {package["price"]} تون'})
+        
+        db.update_user_balance(int(user_id), ton_amount=-package['price'])
+        
+        channel_username = channel_link
+        if 't.me/' in channel_link:
+            channel_username = '@' + channel_link.split('t.me/')[-1]
+        
+        success, ad_id = db.create_user_ad(
+            user_id=int(user_id),
+            title=title,
+            description=description,
+            channel_link=channel_link,
+            channel_username=channel_username,
+            channel_id=None,
+            package_id=package_id
+        )
+        
+        if success:
+            return jsonify({'success': True, 'ad_id': ad_id, 'message': 'تم إنشاء الإعلان'})
+        else:
+            return jsonify({'success': False, 'message': 'حدث خطأ في إنشاء الإعلان'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/api/verify_ad_channel', methods=['POST'])
+def verify_ad_channel():
+    """التحقق من البوت في قناة المستخدم"""
+    data = request.get_json()
+    user_id = data.get('user_id')
+    ad_id = data.get('ad_id')
+    
+    if not user_id or not ad_id:
+        return jsonify({'success': False, 'message': 'بيانات ناقصة'})
+    
+    try:
+        ad = db.get_ad_by_id(int(ad_id), int(user_id))
+        if not ad:
+            return jsonify({'success': False, 'message': 'الإعلان غير موجود'})
+        
+        success = db.verify_channel_bot(int(user_id), int(ad_id), "Youlim5_bot")
+        
+        if success:
+            return jsonify({'success': True, 'message': 'تم التحقق بنجاح'})
+        else:
+            return jsonify({'success': False, 'message': 'فشل التحقق'})
+            
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
@@ -93,8 +183,7 @@ def watch_ad():
             'success': True,
             'reward': reward,
             'new_points': user['balance_points'],
-            'remaining': 9 - today_ads,
-            'watched_today': today_ads + 1
+            'remaining': 9 - today_ads
         })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
@@ -232,251 +321,52 @@ def get_ads():
         'daily_limit': 10
     })
 
-@app.route('/api/claim_ads', methods=['POST'])
-def claim_ads():
-    data = request.get_json()
-    user_id = data.get('user_id')
-    points = data.get('points', 0)
-    
-    success, msg = db.convert_points_to_ton(int(user_id), points)
-    
-    if success:
-        user = db.get_user(int(user_id))
-        return jsonify({
-            'success': True,
-            'message': f'🎉 تم تحويل {points} نقطة',
-            'new_ton': user['balance_ton'],
-            'new_points': user['balance_points']
-        })
-    else:
-        return jsonify({'success': False, 'message': msg})
-
-# ==================== واجهات المهام ====================
-
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():
-    """جلب جميع المهام المتاحة للمستخدم"""
-    user_id = request.args.get('user_id')
-    
-    try:
-        tasks = db.get_active_tasks()
-        user_tasks = db.get_user_tasks_progress(int(user_id)) if user_id else []
-        
-        # إضافة حالة كل مهمة للمستخدم
-        user_task_map = {ut['task_id']: ut['status'] for ut in user_tasks}
-        
-        for task in tasks:
-            task['status'] = user_task_map.get(task['id'], 'available')
-        
-        return jsonify({'success': True, 'tasks': tasks})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e), 'tasks': []})
-
-@app.route('/api/task', methods=['GET'])
-def get_task():
-    """جلب تفاصيل مهمة محددة"""
-    task_id = request.args.get('task_id')
-    user_id = request.args.get('user_id')
-    
-    if not task_id:
-        return jsonify({'success': False, 'message': 'task_id مطلوب'})
-    
-    try:
-        task = db.get_task(int(task_id))
-        if not task:
-            return jsonify({'success': False, 'message': 'المهمة غير موجودة'})
-        
-        if user_id:
-            status = db.verify_user_task(int(user_id), int(task_id))
-            task['status'] = status
-        else:
-            task['status'] = 'available'
-        
-        return jsonify({'success': True, 'task': task})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
-@app.route('/api/verify_task', methods=['POST'])
-def verify_task():
-    """التحقق من اشتراك المستخدم ومنح المكافأة"""
-    data = request.get_json()
-    user_id = data.get('user_id')
-    task_id = data.get('task_id')
-    
-    if not user_id or not task_id:
-        return jsonify({'success': False, 'message': 'بيانات ناقصة'})
-    
-    try:
-        # التحقق من وجود المهمة
-        task = db.get_task(int(task_id))
-        if not task:
-            return jsonify({'success': False, 'message': 'المهمة غير موجودة'})
-        
-        # التحقق من حالة المهمة للمستخدم
-        current_status = db.verify_user_task(int(user_id), int(task_id))
-        
-        if current_status == 'completed':
-            return jsonify({'success': False, 'message': 'لقد حصلت على المكافأة بالفعل'})
-        
-        # ملاحظة: هنا يجب التحقق من اشتراك المستخدم في القناة
-        # لكن هذا يتطلب توكن البوت والتحقق عبر Telegram API
-        # سنعتبر أن التحقق ناجح حالياً
-        
-        # إكمال المهمة ومنح المكافأة
-        success = db.complete_user_task(int(user_id), int(task_id))
-        
-        if success:
-            reward_text = ""
-            if task['reward_points'] > 0:
-                reward_text += f"⭐ {task['reward_points']} نقطة"
-            if task['reward_ton'] > 0:
-                if reward_text:
-                    reward_text += " + "
-                reward_text += f"💰 {task['reward_ton']} تون"
-            
-            return jsonify({
-                'success': True,
-                'message': 'تم التحقق بنجاح',
-                'reward_text': reward_text,
-                'reward_points': task['reward_points'],
-                'reward_ton': task['reward_ton']
-            })
-        else:
-            return jsonify({'success': False, 'message': 'حدث خطأ في منح المكافأة'})
-            
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
-@app.route('/api/start_task', methods=['POST'])
-def start_task():
-    """بدء مهمة جديدة"""
-    data = request.get_json()
-    user_id = data.get('user_id')
-    task_id = data.get('task_id')
-    
-    if not user_id or not task_id:
-        return jsonify({'success': False, 'message': 'بيانات ناقصة'})
-    
-    try:
-        success = db.create_user_task(int(user_id), int(task_id))
-        if success:
-            return jsonify({'success': True, 'message': 'تم بدء المهمة'})
-        else:
-            return jsonify({'success': False, 'message': 'المهمة قيد التنفيذ بالفعل'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
-
-# ==================== واجهات الأدمن للمهام ====================
-
-@app.route('/api/admin/tasks', methods=['GET'])
-def admin_get_tasks():
-    """جلب جميع المهام للأدمن"""
-    admin_id = request.args.get('admin_id')
-    if not admin_id or int(admin_id) not in ADMIN_IDS:
-        return jsonify({'success': False, 'message': 'غير مصرح'})
-    
-    tasks = db.get_all_tasks()
+    tasks = [
+        {'id': 1, 'title': 'قناة RockyTap', 'reward': 100, 'icon': '📺', 'channel_link': 'https://t.me/RockyTap', 'channel_username': '@RockyTap'},
+        {'id': 2, 'title': 'قناة الأخبار', 'reward': 150, 'icon': '📰', 'channel_link': 'https://t.me/CryptoNews', 'channel_username': '@CryptoNews'},
+        {'id': 3, 'title': 'مجموعة المناقشات', 'reward': 200, 'icon': '👥', 'channel_link': 'https://t.me/RockyTapGroup', 'channel_username': '@RockyTapGroup'}
+    ]
     return jsonify({'success': True, 'tasks': tasks})
 
-@app.route('/api/admin/create_task', methods=['POST'])
-def admin_create_task():
-    """إنشاء مهمة جديدة"""
+@app.route('/api/complete_task', methods=['POST'])
+def complete_task():
     data = request.get_json()
-    admin_id = data.get('admin_id')
+    user_id = data.get('user_id')
+    reward = data.get('reward', 0)
     
-    if not admin_id or int(admin_id) not in ADMIN_IDS:
-        return jsonify({'success': False, 'message': 'غير مصرح'})
-    
-    success, result = db.create_task(
-        title=data.get('title'),
-        description=data.get('description', ''),
-        icon=data.get('icon', '📺'),
-        channel_link=data.get('channel_link'),
-        channel_username=data.get('channel_username', ''),
-        reward_points=data.get('reward_points', 0),
-        reward_ton=data.get('reward_ton', 0),
-        created_by=int(admin_id)
-    )
+    db.update_user_balance(int(user_id), points_amount=reward, update_earned=True)
+    user = db.get_user(int(user_id))
     
     return jsonify({
-        'success': success,
-        'task': result if success else None,
-        'message': 'تم الإنشاء' if success else str(result)
+        'success': True,
+        'message': f'✅ +{reward} نقطة',
+        'new_points': user['balance_points']
     })
-
-@app.route('/api/admin/update_task', methods=['POST'])
-def admin_update_task():
-    """تحديث مهمة"""
-    data = request.get_json()
-    admin_id = data.get('admin_id')
-    
-    if not admin_id or int(admin_id) not in ADMIN_IDS:
-        return jsonify({'success': False, 'message': 'غير مصرح'})
-    
-    success = db.update_task(
-        task_id=data.get('task_id'),
-        title=data.get('title'),
-        description=data.get('description', ''),
-        icon=data.get('icon', '📺'),
-        channel_link=data.get('channel_link'),
-        channel_username=data.get('channel_username', ''),
-        reward_points=data.get('reward_points', 0),
-        reward_ton=data.get('reward_ton', 0)
-    )
-    
-    return jsonify({'success': success, 'message': 'تم التحديث' if success else 'فشل التحديث'})
-
-@app.route('/api/admin/delete_task', methods=['POST'])
-def admin_delete_task():
-    """حذف مهمة"""
-    data = request.get_json()
-    admin_id = data.get('admin_id')
-    task_id = data.get('task_id')
-    
-    if not admin_id or int(admin_id) not in ADMIN_IDS:
-        return jsonify({'success': False, 'message': 'غير مصرح'})
-    
-    success = db.delete_task(task_id)
-    return jsonify({'success': success, 'message': 'تم الحذف' if success else 'فشل الحذف'})
-
-@app.route('/api/admin/task', methods=['GET'])
-def admin_get_task():
-    """جلب مهمة محددة للتعديل"""
-    admin_id = request.args.get('admin_id')
-    task_id = request.args.get('task_id')
-    
-    if not admin_id or int(admin_id) not in ADMIN_IDS:
-        return jsonify({'success': False, 'message': 'غير مصرح'})
-    
-    task = db.get_task(int(task_id))
-    return jsonify({'success': True, 'task': task})
 
 # ==================== تشغيل الخادم ====================
 
 if __name__ == '__main__':
-    hostname = socket.gethostname()
-    try:
-        local_ip = socket.gethostbyname(hostname)
-    except:
-        local_ip = '127.0.0.1'
-    
     print("=" * 60)
     print("🚀 Local API Server is running!")
     print("=" * 60)
     print(f"📍 Local access: http://localhost:5000")
-    print(f"📍 Network access: http://{local_ip}:5000")
+    print(f"📍 Network access: http://158.220.120.209:5000")
     print("=" * 60)
     print("✅ Available endpoints:")
     print("   GET  /api/health")
     print("   GET  /api/user")
+    print("   GET  /api/user_ads")
+    print("   POST /api/create_ad")
+    print("   POST /api/verify_ad_channel")
     print("   GET  /api/tasks")
-    print("   GET  /api/task")
-    print("   POST /api/verify_task")
-    print("   POST /api/start_task")
-    print("   GET  /api/admin/tasks")
-    print("   POST /api/admin/create_task")
-    print("   POST /api/admin/update_task")
-    print("   POST /api/admin/delete_task")
+    print("   GET  /api/ads")
+    print("   POST /api/watch_ad")
+    print("   POST /api/spin_wheel")
+    print("   POST /api/convert")
+    print("   POST /api/request_withdraw")
+    print("   POST /api/redeem_code")
     print("=" * 60)
     
     app.run(host='0.0.0.0', port=5000, debug=True)

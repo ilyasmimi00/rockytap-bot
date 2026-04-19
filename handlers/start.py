@@ -1,6 +1,6 @@
 # handlers/start.py
 """
-معالج الأوامر الرئيسية والقائمة الرئيسية
+معالج الأوامر الرئيسية والقائمة الرئيسية - نسخة Mini App
 """
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
@@ -17,7 +17,7 @@ class StartHandler:
         self.db = bot.db
     
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """معالجة أمر /start"""
+        """معالجة أمر /start - فتح Mini App مباشرة"""
         user = update.effective_user
         user_id = user.id
         
@@ -51,11 +51,35 @@ class StartHandler:
             except ValueError:
                 pass
         
-        # عرض القائمة الرئيسية
-        await self.show_main_menu(update, context)
+        # ✅ زر Mini App - هذا هو المهم
+        webapp_url = f"{self.bot.webapp_url}/index.html"
+        
+        text = f"""
+🎉 <b>مرحباً بك في {self.bot.bot_name}!</b> 🎉
+
+💰 <b>رصيدك:</b>
+• تون: <code>{db_user['balance_ton']:.4f}</code>
+• نقاط: <code>{db_user['balance_points']:.0f}</code>
+
+📱 اضغط على الزر أدناه لفتح التطبيق والبدء في الربح!
+        """
+        
+        keyboard = [[
+            InlineKeyboardButton(
+                "🎮 افتح التطبيق", 
+                web_app=WebAppInfo(url=webapp_url)
+            )
+        ]]
+        
+        await update.message.reply_text(
+            text, 
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='HTML'
+        )
+        logger.info(f"✅ Mini App button sent to user {user_id}")
     
     async def show_main_menu(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """عرض القائمة الرئيسية"""
+        """عرض القائمة الرئيسية (عند الضغط على رجوع)"""
         user = update.effective_user
         user_id = user.id
         
@@ -76,19 +100,11 @@ class StartHandler:
         
         keyboard = [
             [
-                InlineKeyboardButton("💰 رصيدي", callback_data='balance_menu'),
-                InlineKeyboardButton("📋 المهام", callback_data='tasks_menu')
+                InlineKeyboardButton("🎮 فتح التطبيق", web_app=WebAppInfo(url=f"{self.bot.webapp_url}/index.html")),
+                InlineKeyboardButton("👥 الإحالات", callback_data='referral_menu')
             ],
             [
-                InlineKeyboardButton("🎡 عجلة الحظ", callback_data='wheel_menu'),
-                InlineKeyboardButton("📺 إعلانات", callback_data='ads_menu')
-            ],
-            [
-                InlineKeyboardButton("👥 الإحالات", callback_data='referral_menu'),
-                InlineKeyboardButton("🎁 أكواد", callback_data='giftcode_menu')
-            ],
-            [
-                InlineKeyboardButton("📢 إعلاناتي", callback_data='ads_posting_menu'),
+                InlineKeyboardButton("🎁 أكواد", callback_data='giftcode_menu'),
                 InlineKeyboardButton("💸 سحب", callback_data='withdraw_menu')
             ]
         ]

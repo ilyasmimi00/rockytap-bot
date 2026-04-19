@@ -1,14 +1,16 @@
 # Telegram Bot
 python-telegram-bot==21.10
 
+# Web Framework
+Flask==3.1.0
+flask-cors==5.0.0
+
 # Database
 sqlalchemy==2.0.40
 
-# HTTP Requests
-requests==2.32.3
-
 # Utilities
 python-dotenv==1.0.0
+requests==2.32.3
 
-# Optional but useful
-cachetools==5.3.3
+# Optional
+cachetools==5.5.0

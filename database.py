@@ -641,6 +641,15 @@ class Database:
         finally:
             session.close()
     
+    def get_user_wheel_total(self, user_id):
+        """الحصول على إجمالي أرباح المستخدم من العجلة"""
+        session = self.get_session()
+        try:
+            total = session.query(func.sum(WheelSpin.reward_points)).filter_by(user_id=user_id).scalar()
+            return total or 0
+        finally:
+            session.close()
+    
     # ==================== دوال المهام ====================
     
     def get_active_tasks(self):
@@ -1117,6 +1126,29 @@ class Database:
         session = self.get_session()
         try:
             return session.query(Withdrawal).filter_by(status='pending').count()
+        finally:
+            session.close()
+    
+    # ==================== دوال المهام المجانية ====================
+    
+    def get_user_free_tasks_status(self, user_id):
+        """
+        جلب حالة المهام المجانية للمستخدم
+        هذه الدالة تستخدم في نظام السحب للتحقق من شروط السحب
+        """
+        session = self.get_session()
+        try:
+            # جلب جميع المهام المكتملة للمستخدم
+            user_tasks = session.query(UserTask).filter_by(
+                user_id=user_id, 
+                status='completed'
+            ).all()
+            
+            # إرجاع قائمة بالمهام المكتملة
+            return [{'task_id': ut.task_id, 'status': 'completed'} for ut in user_tasks]
+        except Exception as e:
+            print(f"Error getting free tasks status: {e}")
+            return []
         finally:
             session.close()
     

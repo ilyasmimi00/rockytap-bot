@@ -1,6 +1,6 @@
 # handlers/referral.py
 """
-معالج الإحالات
+معالج الإحالات - نسخة مصححة
 """
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
@@ -21,13 +21,9 @@ class ReferralHandler:
         user = update.effective_user
         user_id = user.id
         
-        # جلب إحصائيات الإحالات من قاعدة البيانات
         stats = self.db.get_user_referrals_stats(user_id)
-        
-        # جلب إعدادات الإحالات الحالية
         settings = self.db.get_referral_settings()
         
-        # تحديد نص المكافأة حسب الإعدادات
         if settings['reward_type'] == 'points':
             reward_text = f"⭐ {settings['points_value']} نقطة"
         elif settings['reward_type'] == 'ton':
@@ -35,8 +31,8 @@ class ReferralHandler:
         else:
             reward_text = f"⭐ {settings['points_value']} نقطة + 💰 {settings['ton_value']:.4f} تون"
         
-        # رابط الإحالة
-        bot_username = (await self.bot.application.bot.get_me()).username
+        # ✅ الإصلاح: استخدام context.bot بدلاً من self.bot.application.bot
+        bot_username = (await context.bot.get_me()).username
         referral_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
         
         text = f"""
@@ -64,10 +60,9 @@ class ReferralHandler:
 3️⃣ بعد إكمال {settings['required_tasks']} مهام، تحصل على المكافأة فوراً 🎁
         """
         
-        # إضافة قائمة المدعوين إذا وجدت
         if stats['referrals']:
             text += "\n📋 <b>قائمة المدعوين:</b>\n"
-            for ref in stats['referrals'][:5]:  # عرض آخر 5 فقط
+            for ref in stats['referrals'][:5]:
                 status_icon = "✅" if ref['status'] == 'مكتمل' else "⏳"
                 text += f"{status_icon} @{ref['username']} | {ref['date']}\n"
         
@@ -87,7 +82,8 @@ class ReferralHandler:
         user = update.effective_user
         user_id = user.id
         
-        bot_username = (await self.bot.application.bot.get_me()).username
+        # ✅ الإصلاح: استخدام context.bot
+        bot_username = (await context.bot.get_me()).username
         referral_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
         
         text = f"""
@@ -119,7 +115,8 @@ class ReferralHandler:
         user = update.effective_user
         user_id = user.id
         
-        bot_username = (await self.bot.application.bot.get_me()).username
+        # ✅ الإصلاح: استخدام context.bot
+        bot_username = (await context.bot.get_me()).username
         referral_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
         
         await update.callback_query.answer(f"✅ تم نسخ الرابط: {referral_link}", show_alert=True)
@@ -142,21 +139,20 @@ class ReferralHandler:
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
     
-    async def handle_referral_join(self, user_id, referrer_id):
-        """معالجة انضمام مستخدم عبر رابط إحالة"""
-        # هذه الدالة تستدعى تلقائياً عند استخدام رابط الإحالة
+    async def handle_referral_join(self, user_id, referrer_id, bot):
+        """معالجة انضمام مستخدم عبر رابط إحالة - نسخة مصححة"""
         result, msg = self.db.create_referral(
             referrer_id=referrer_id,
             referred_id=user_id,
-            referred_username=None  # سيتم تحديثه لاحقاً
+            referred_username=None
         )
         
         if result:
             logger.info(f"✅ New referral: {referrer_id} -> {user_id}")
             
-            # إرسال إشعار للمحيل
+            # ✅ الإصلاح: استخدام bot parameter بدلاً من self.bot.application.bot
             try:
-                await self.bot.application.bot.send_message(
+                await bot.send_message(
                     chat_id=referrer_id,
                     text=f"🎉 <b>مبروك! لديك إحالة جديدة!</b>\n\n"
                          f"👤 المستخدم الجديد: <code>{user_id}</code>\n"

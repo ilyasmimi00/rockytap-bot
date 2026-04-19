@@ -1,6 +1,6 @@
 # handlers/balance.py
 """
-معالج الرصيد وتحويل النقاط إلى تون
+معالج الرصيد وتحويل النقاط إلى تون - نسخة مصححة
 """
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
@@ -9,6 +9,8 @@ from config import POINTS_TO_TON_RATE, WEBAPP_URL
 import logging
 
 logger = logging.getLogger(__name__)
+
+MIN_CONVERT_POINTS = 10  # الحد الأدنى لتحويل النقاط
 
 
 class BalanceHandler:
@@ -31,6 +33,7 @@ class BalanceHandler:
 ━━━━━━━━━━━━━━━━━━
 💱 <b>سعر الصرف:</b> {POINTS_TO_TON_RATE} نقطة = 1 تون
 📉 <b>الحد الأدنى للسحب:</b> <code>0.02</code> تون
+📊 <b>الحد الأدنى للتحويل:</b> <code>{MIN_CONVERT_POINTS}</code> نقطة
 ━━━━━━━━━━━━━━━━━━
         """
         
@@ -58,6 +61,7 @@ class BalanceHandler:
 ━━━━━━━━━━━━━━━━━━
 ⭐ <b>نقاطك الحالية:</b> <code>{user_data['balance_points']:.0f}</code>
 💱 <b>سعر الصرف:</b> {POINTS_TO_TON_RATE} نقطة = 1 تون
+📊 <b>الحد الأدنى للتحويل:</b> <code>{MIN_CONVERT_POINTS}</code> نقطة
 ━━━━━━━━━━━━━━━━━━
 📝 <b>أدخل عدد النقاط التي تريد تحويلها:</b>
 
@@ -74,7 +78,7 @@ class BalanceHandler:
         )
     
     async def handle_convert_input(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """معالجة إدخال عدد النقاط للتحويل"""
+        """معالجة إدخال عدد النقاط للتحويل - نسخة مصححة مع حد أدنى"""
         if not context.user_data.get('awaiting_convert'):
             return False
         
@@ -87,6 +91,11 @@ class BalanceHandler:
             
             if points <= 0:
                 await message.reply_text("❌ يجب إدخال عدد أكبر من صفر")
+                return True
+            
+            # ✅ إضافة الحد الأدنى للتحويل
+            if points < MIN_CONVERT_POINTS:
+                await message.reply_text(f"❌ الحد الأدنى للتحويل هو {MIN_CONVERT_POINTS} نقاط")
                 return True
             
             success, msg = self.db.convert_points_to_ton(user_id, points)
