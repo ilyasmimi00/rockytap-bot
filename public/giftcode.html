@@ -22,46 +22,30 @@
             padding-bottom: 80px;
         }
         .game-container { max-width: 450px; margin: 0 auto; }
-        .main-card {
-            background: rgba(10, 15, 26, 0.85);
-            backdrop-filter: blur(15px);
-            border-radius: 32px;
-            border: 1px solid rgba(0, 191, 255, 0.2);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
-        }
-        .header-custom {
-            padding: 18px 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
-        }
-        .logo-text {
-            background: linear-gradient(135deg, #00BFFF, #00CED1);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            font-weight: 800;
-        }
-        .icon-btn { font-size: 1.5rem; cursor: pointer; transition: all 0.2s; color: #aaa; }
-        .icon-btn:hover { color: #00BFFF; transform: scale(1.1); }
+        
         .page-title { text-align: center; padding: 20px; color: #00BFFF; font-size: 24px; font-weight: 800; }
+        
         .stats-card {
             background: linear-gradient(135deg, rgba(0,30,50,0.6), rgba(0,15,30,0.8));
             border-radius: 20px;
             padding: 15px;
-            margin: 20px 16px;
+            margin-bottom: 20px;
             text-align: center;
         }
         .stats-value { font-size: 28px; font-weight: 800; color: #FFD700; }
-        .code-input { margin: 0 16px 20px; }
+        
+        .code-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
         .code-input input {
-            width: 100%;
+            flex: 1;
             padding: 12px;
             background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(0,191,255,0.3);
+            border: 1px solid #00BFFF;
             border-radius: 16px;
             color: white;
-            font-size: 18px;
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -69,16 +53,13 @@
         .redeem-btn {
             background: linear-gradient(135deg, #FFD700, #FFA500);
             border: none;
-            padding: 14px;
+            padding: 12px;
             border-radius: 60px;
             color: #1a1a2e;
             font-weight: bold;
-            font-size: 16px;
             cursor: pointer;
-            width: calc(100% - 32px);
-            margin: 0 16px 20px;
         }
-        .codes-list { margin: 20px 16px; }
+        
         .code-item {
             background: rgba(0,0,0,0.3);
             border-radius: 16px;
@@ -88,105 +69,84 @@
             justify-content: space-between;
             align-items: center;
         }
+        
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(15px);
             padding: 10px 20px;
             border-top: 1px solid rgba(0,191,255,0.2);
             max-width: 450px;
             margin: 0 auto;
             width: 100%;
+            display: flex;
+            justify-content: space-around;
         }
-        .nav-item { text-align: center; color: #666; transition: color 0.2s; cursor: pointer; font-size: 11px; }
+        .nav-item {
+            text-align: center;
+            color: #666;
+            cursor: pointer;
+            font-size: 11px;
+        }
         .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
         .nav-item.active { color: #00BFFF; }
-        .nav-item:hover { color: #00BFFF; }
     </style>
 </head>
 <body>
 
 <div class="game-container">
-    <div class="main-card">
-        
-        <div class="header-custom">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="logo-icon rounded-circle d-flex align-items-center justify-content-center" 
-                         style="width: 38px; height: 38px; background: linear-gradient(135deg, #00BFFF, #0088aa);">
-                        <i class="fas fa-gamepad text-white"></i>
-                    </div>
-                    <span class="logo-text fw-bold fs-5">RockyTap</span>
-                </div>
-                <div class="d-flex gap-3">
-                    <i class="fas fa-wallet icon-btn" onclick="goTo('withdraw')"></i>
-                    <i class="fas fa-bell icon-btn" onclick="showAlert('🔔 لا توجد إشعارات جديدة')"></i>
-                </div>
-            </div>
-        </div>
-        
-        <div class="page-title">🎁 الأكواد</div>
-        
-        <div class="stats-card">
-            <div>إجمالي المكافآت من الأكواد</div>
-            <div class="stats-value" id="totalRewards">0</div>
-        </div>
-        
-        <div class="code-input">
-            <input type="text" id="giftCode" placeholder="XXXX-XXXX" maxlength="9">
-        </div>
-        
-        <button class="redeem-btn" onclick="redeemCode()">🎁 تفعيل الكود</button>
-        
-        <div class="codes-list">
-            <div style="font-size:16px;font-weight:bold;color:#00BFFF;margin-bottom:10px;">📋 الأكواد المستخدمة</div>
-            <div id="codesList"></div>
-        </div>
-        
+    <div class="page-title">🎁 الأكواد الترويجية</div>
+    
+    <div class="stats-card">
+        <div>إجمالي المكافآت</div>
+        <div class="stats-value" id="totalRewards">0</div>
     </div>
+    
+    <div class="code-input">
+        <input type="text" id="giftCode" placeholder="XXXX-XXXX" maxlength="9">
+        <button class="redeem-btn" onclick="redeemCode()">🎁 تفعيل</button>
+    </div>
+    
+    <h4 style="color:#00BFFF; margin-bottom: 10px;">📋 الأكواد المستخدمة</h4>
+    <div id="codesList"></div>
 </div>
 
 <div class="bottom-nav">
-    <div class="row text-center">
-        <div class="col"><div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div></div>
-        <div class="col"><div class="nav-item" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div></div>
-        <div class="col"><div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div></div>
-        <div class="col"><div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div></div>
-        <div class="col"><div class="nav-item active" onclick="goTo('admin')"><i class="fas fa-crown"></i><div>أدمن</div></div></div>
-    </div>
+    <div class="nav-item" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div>
+    <div class="nav-item" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div>
+    <div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div>
+    <div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div>
+    <div class="nav-item active" onclick="goTo('giftcode')"><i class="fas fa-gift"></i><div>أكواد</div></div>
 </div>
 
 <script>
-    let tg = initWebApp();
-    
-    const availableCodes = {
-        "WELCOME100": { reward: 100, used: false },
-        "ROCKY50": { reward: 50, used: false },
-        "CRYPTO200": { reward: 200, used: false }
-    };
-    
+    let currentUserId = null;
     let usedCodes = [];
     let totalRewards = 0;
     
     function loadData() {
-        const saved = localStorage.getItem('giftCodes');
+        currentUserId = window.currentUserId;
+        if (!currentUserId) {
+            currentUserId = 8268443100;
+        }
+        
+        const saved = localStorage.getItem(`giftCodes_${currentUserId}`);
         if (saved) {
             const data = JSON.parse(saved);
             usedCodes = data.usedCodes || [];
             totalRewards = data.totalRewards || 0;
+            updateDisplay();
         }
-        updateDisplay();
     }
     
     function updateDisplay() {
         document.getElementById('totalRewards').innerText = totalRewards;
         
-        let codesHtml = '';
+        let html = '';
         for (let code of usedCodes) {
-            codesHtml += `
+            html += `
                 <div class="code-item">
                     <div>
                         <div>🎫 <code>${code.code}</code></div>
@@ -196,10 +156,17 @@
                 </div>
             `;
         }
-        document.getElementById('codesList').innerHTML = codesHtml || '<div style="text-align:center;padding:20px;color:#666;">لا توجد أكواد مستخدمة بعد</div>';
+        document.getElementById('codesList').innerHTML = html || '<div style="text-align:center;padding:20px;color:#666;">لا توجد أكواد مستخدمة بعد</div>';
     }
     
-    function redeemCode() {
+    function saveData() {
+        localStorage.setItem(`giftCodes_${currentUserId}`, JSON.stringify({
+            usedCodes: usedCodes,
+            totalRewards: totalRewards
+        }));
+    }
+    
+    async function redeemCode() {
         let code = document.getElementById('giftCode').value.trim().toUpperCase();
         if (!code) {
             showAlert('⚠️ الرجاء إدخال الكود');
@@ -213,40 +180,33 @@
             return;
         }
         
-        const codeData = availableCodes[code];
-        if (!codeData || codeData.used) {
-            showAlert('❌ كود غير صالح!');
-            document.getElementById('giftCode').value = '';
-            return;
+        showAlert('🔍 جاري التحقق من الكود...');
+        
+        try {
+            const result = await redeemCode(currentUserId, code);
+            
+            if (result && result.success) {
+                const reward = result.reward_points || 0;
+                totalRewards += reward;
+                
+                usedCodes.unshift({
+                    code: code,
+                    reward: reward,
+                    date: new Date().toLocaleDateString('ar-EG')
+                });
+                
+                saveData();
+                updateDisplay();
+                showAlert(`✅ تم تفعيل الكود بنجاح!\n🎁 حصلت على +${reward} نقطة!`);
+                document.getElementById('giftCode').value = '';
+            } else {
+                showAlert('❌ ' + (result?.message || 'كود غير صالح'));
+            }
+        } catch(e) {
+            console.error('Error redeeming code:', e);
+            showAlert('❌ حدث خطأ في التحقق من الكود');
         }
-        
-        codeData.used = true;
-        const reward = codeData.reward;
-        totalRewards += reward;
-        
-        usedCodes.push({
-            code: code,
-            reward: reward,
-            date: new Date().toLocaleDateString('ar-EG')
-        });
-        
-        saveData();
-        updateDisplay();
-        
-        showAlert(`✅ تم تفعيل الكود بنجاح!\n🎁 حصلت على +${reward} نقطة!`);
-        sendToBot('redeem_code', { code: code, reward: reward });
-        
-        document.getElementById('giftCode').value = '';
     }
-    
-    function saveData() {
-        localStorage.setItem('giftCodes', JSON.stringify({
-            usedCodes: usedCodes,
-            totalRewards: totalRewards
-        }));
-    }
-    
-    window.addEventListener('beforeunload', () => { saveData(); });
     
     loadData();
 </script>

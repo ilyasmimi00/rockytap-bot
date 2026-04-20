@@ -18,136 +18,34 @@
             background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
             font-family: 'Cairo', sans-serif;
             min-height: 100vh;
-            padding: 0;
+            padding: 15px;
             padding-bottom: 80px;
         }
         .game-container { max-width: 450px; margin: 0 auto; }
         
-        .header-custom {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(15px);
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
-            z-index: 1000;
-            max-width: 450px;
-            margin: 0 auto;
-            width: 100%;
-            border-radius: 0 !important;
-        }
-        .header-spacer { height: 65px; }
-        
-        .logo-text {
-            background: linear-gradient(135deg, #00BFFF, #00CED1);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            font-weight: 800;
-        }
-        .icon-btn { 
-            font-size: 1.5rem; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-            color: #aaa; 
-            margin-left: 15px;
-            background: transparent;
-            border: none;
-        }
-        .icon-btn:hover { color: #00BFFF; transform: scale(1.1); }
-        
-        .lang-btn {
-            background: rgba(0, 191, 255, 0.15);
-            border: 1px solid rgba(0, 191, 255, 0.3);
-            padding: 6px 12px;
-            cursor: pointer;
-            font-size: 12px;
-            color: #00BFFF;
-            transition: all 0.2s;
-            border-radius: 20px;
-        }
-        
-        .page-title {
-            text-align: center;
-            padding: 20px;
-            color: #00BFFF;
-            font-size: 24px;
-            font-weight: 800;
-        }
-        
-        .tasks-list { display: flex; flex-direction: column; gap: 12px; padding: 0 16px; }
+        .page-title { text-align: center; padding: 20px; color: #00BFFF; font-size: 24px; font-weight: 800; }
         
         .task-card {
-            background: linear-gradient(135deg, rgba(0, 20, 35, 0.7), rgba(0, 10, 20, 0.8));
+            background: linear-gradient(135deg, rgba(0,20,35,0.7), rgba(0,10,20,0.8));
             border-radius: 20px;
             padding: 15px;
-            border: 1px solid rgba(0, 191, 255, 0.25);
-            transition: all 0.3s;
-        }
-        
-        .task-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
             margin-bottom: 12px;
+            border: 1px solid rgba(0,191,255,0.25);
         }
-        .task-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(0, 191, 255, 0.15);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        .task-info {
-            flex: 1;
-        }
-        .task-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #fff;
-        }
-        .task-reward {
-            font-size: 12px;
-            color: #FFD700;
-            margin-top: 4px;
-        }
-        
-        .task-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-        }
+        .task-header { display: flex; align-items: center; gap: 12px; }
+        .task-icon { font-size: 32px; }
+        .task-title { font-weight: bold; }
+        .task-reward { font-size: 12px; color: #FFD700; }
         .task-btn {
-            flex: 1;
-            padding: 10px;
-            border-radius: 50px;
-            font-size: 13px;
-            font-weight: bold;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: none;
-        }
-        .btn-go {
             background: linear-gradient(135deg, #00BFFF, #0088aa);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 50px;
             color: white;
+            cursor: pointer;
+            margin-top: 10px;
         }
-        .btn-verify {
-            background: linear-gradient(135deg, #e67e22, #d35400);
-            color: white;
-        }
-        .btn-completed {
-            background: #2ecc71;
-            color: white;
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-        
+        .task-btn.completed { background: #2ecc71; cursor: default; opacity: 0.7; }
         .task-status {
             display: inline-block;
             padding: 4px 10px;
@@ -164,10 +62,9 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(15px);
+            background: rgba(0,0,0,0.95);
             padding: 10px 20px;
-            border-top: 1px solid rgba(0, 191, 255, 0.2);
+            border-top: 1px solid rgba(0,191,255,0.2);
             max-width: 450px;
             margin: 0 auto;
             width: 100%;
@@ -183,48 +80,14 @@
         .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
         .nav-item.active { color: #00BFFF; }
         
-        .scroll-content {
-            overflow-y: auto;
-            height: calc(100vh - 130px);
-            padding: 15px 0;
-        }
-        
-        .loading, .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #aaa;
-        }
+        .loading { text-align: center; padding: 40px; color: #aaa; }
     </style>
 </head>
 <body>
 
 <div class="game-container">
-    <div class="header-custom">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-2">
-                <div class="logo-icon d-flex align-items-center justify-content-center" 
-                     style="width: 38px; height: 38px; background: linear-gradient(135deg, #00BFFF, #0088aa); border-radius: 10px;">
-                    <i class="fas fa-gamepad text-white"></i>
-                </div>
-                <span class="logo-text fw-bold fs-5">RockyTap</span>
-            </div>
-            <div class="d-flex gap-3 align-items-center">
-                <button class="lang-btn" onclick="toggleLanguage()"><i class="fas fa-globe"></i> EN</button>
-                <i class="fas fa-wallet icon-btn" onclick="goTo('withdraw')"></i>
-                <i class="fas fa-bell icon-btn" onclick="showAlert('🔔 لا توجد إشعارات جديدة')"></i>
-            </div>
-        </div>
-    </div>
-    
-    <div class="header-spacer"></div>
-    
-    <div class="scroll-content">
-        <div class="page-title">📋 المهام</div>
-        
-        <div class="tasks-list" id="tasksList">
-            <div class="loading">📡 جاري التحميل...</div>
-        </div>
-    </div>
+    <div class="page-title">📋 المهام</div>
+    <div id="tasksList" class="tasks-list"></div>
 </div>
 
 <div class="bottom-nav">
@@ -236,48 +99,37 @@
 </div>
 
 <script>
-    let tg = null;
     let currentUserId = null;
     let tasks = [];
     let userTaskStatus = {};
     
-    // تهيئة
-    function init() {
-        tg = initWebApp();
-        let user = getUser();
-        if (user) {
-            currentUserId = user.id;
+    async function loadTasks() {
+        currentUserId = window.currentUserId;
+        if (!currentUserId) {
+            currentUserId = 8268443100;
         }
         
-        loadTasks();
-    }
-    
-    async function loadTasks() {
         const container = document.getElementById('tasksList');
         container.innerHTML = '<div class="loading">📡 جاري التحميل...</div>';
         
         try {
             const result = await getTasks(currentUserId);
-            
-            if (result && result.success && result.tasks) {
+            if (result && result.success) {
                 tasks = result.tasks;
                 loadUserTaskStatus();
             } else {
-                // مهام تجريبية إذا فشل API
                 tasks = [
-                    { id: 1, title: "قناة RockyTap", icon: "📺", channel_link: "https://t.me/RockyTap", channel_username: "@RockyTap", reward_points: 100, reward_ton: 0 },
-                    { id: 2, title: "قناة الأخبار", icon: "📰", channel_link: "https://t.me/CryptoNews", channel_username: "@CryptoNews", reward_points: 150, reward_ton: 0.01 },
-                    { id: 3, title: "مجموعة المناقشات", icon: "👥", channel_link: "https://t.me/RockyTapGroup", channel_username: "@RockyTapGroup", reward_points: 200, reward_ton: 0 }
+                    { id: 1, title: "قناة RockyTap", icon: "📺", channel_link: "https://t.me/RockyTap", reward_points: 100, reward_ton: 0, user_status: "available" },
+                    { id: 2, title: "قناة الأخبار", icon: "📰", channel_link: "https://t.me/CryptoNews", reward_points: 150, reward_ton: 0.01, user_status: "available" }
                 ];
-                loadUserTaskStatus();
+                renderTasks();
             }
         } catch(e) {
             console.error('Error loading tasks:', e);
             tasks = [
-                { id: 1, title: "قناة RockyTap", icon: "📺", channel_link: "https://t.me/RockyTap", channel_username: "@RockyTap", reward_points: 100, reward_ton: 0 },
-                { id: 2, title: "قناة الأخبار", icon: "📰", channel_link: "https://t.me/CryptoNews", channel_username: "@CryptoNews", reward_points: 150, reward_ton: 0.01 }
+                { id: 1, title: "قناة RockyTap", icon: "📺", channel_link: "https://t.me/RockyTap", reward_points: 100, reward_ton: 0, user_status: "available" }
             ];
-            loadUserTaskStatus();
+            renderTasks();
         }
     }
     
@@ -285,8 +137,16 @@
         const saved = localStorage.getItem(`task_status_${currentUserId}`);
         if (saved) {
             userTaskStatus = JSON.parse(saved);
-        } else {
-            userTaskStatus = {};
+        }
+        // دمج حالة المهام من API
+        for (let task of tasks) {
+            if (task.user_status === 'completed') {
+                userTaskStatus[task.id] = 'completed';
+            } else if (task.user_status === 'pending' && !userTaskStatus[task.id]) {
+                userTaskStatus[task.id] = 'pending';
+            } else if (!userTaskStatus[task.id]) {
+                userTaskStatus[task.id] = 'available';
+            }
         }
         renderTasks();
     }
@@ -298,51 +158,43 @@
     function renderTasks() {
         const container = document.getElementById('tasksList');
         if (!tasks || tasks.length === 0) {
-            container.innerHTML = '<div class="empty-state">✨ لا توجد مهام متاحة حالياً</div>';
+            container.innerHTML = '<div class="loading">✨ لا توجد مهام متاحة حالياً</div>';
             return;
         }
         
         let html = '';
         for (let task of tasks) {
             const status = userTaskStatus[task.id] || 'available';
-            let statusText = '';
-            let statusClass = '';
-            let buttonHtml = '';
-            
             const rewardText = task.reward_points > 0 ? `⭐ ${task.reward_points} نقطة` : '';
             const rewardTonText = task.reward_ton > 0 ? `💰 ${task.reward_ton} تون` : '';
             const fullReward = [rewardText, rewardTonText].filter(t => t).join(' + ');
             
+            let statusText = '', statusClass = '', buttonHtml = '';
+            
             if (status === 'completed') {
                 statusText = '✓ مكتمل';
                 statusClass = 'status-completed';
-                buttonHtml = `<button class="task-btn btn-completed" disabled>✅ تم الإكمال</button>`;
+                buttonHtml = `<button class="task-btn completed" disabled>✅ تم الإكمال</button>`;
             } else if (status === 'pending') {
                 statusText = '⏳ قيد الانتظار';
                 statusClass = 'status-pending';
-                buttonHtml = `
-                    <button class="task-btn btn-verify" onclick="verifyTask(${task.id})">✅ تحقق</button>
-                `;
+                buttonHtml = `<button class="task-btn" onclick="verifyTask(${task.id})">✅ تحقق</button>`;
             } else {
                 statusText = '📌 متاحة';
                 statusClass = 'status-available';
-                buttonHtml = `
-                    <button class="task-btn btn-go" onclick="goToChannel(${task.id})">🔗 اذهب</button>
-                `;
+                buttonHtml = `<button class="task-btn" onclick="goToChannel('${task.channel_link}')">🔗 اذهب</button>`;
             }
             
             html += `
                 <div class="task-card">
                     <div class="task-header">
                         <div class="task-icon">${task.icon || '📺'}</div>
-                        <div class="task-info">
+                        <div>
                             <div class="task-title">${task.title}</div>
                             <div class="task-reward">${fullReward || '⭐ مكافأة'}</div>
                         </div>
                     </div>
-                    <div class="task-buttons">
-                        ${buttonHtml}
-                    </div>
+                    ${buttonHtml}
                     <div class="task-status ${statusClass}">${statusText}</div>
                 </div>
             `;
@@ -350,17 +202,15 @@
         container.innerHTML = html;
     }
     
-    function goToChannel(taskId) {
-        const task = tasks.find(t => t.id === taskId);
-        if (!task) return;
-        
-        userTaskStatus[taskId] = 'pending';
-        saveUserTaskStatus();
-        renderTasks();
-        
-        const channelLink = task.channel_link || `https://t.me/${task.channel_username?.replace('@', '')}`;
-        window.open(channelLink, '_blank');
-        
+    function goToChannel(link) {
+        // تحديث حالة المهمة إلى pending
+        const taskId = tasks.find(t => t.channel_link === link)?.id;
+        if (taskId && userTaskStatus[taskId] === 'available') {
+            userTaskStatus[taskId] = 'pending';
+            saveUserTaskStatus();
+            renderTasks();
+        }
+        window.open(link, '_blank');
         showAlert('🔗 تم فتح القناة. بعد الاشتراك، اضغط على زر "تحقق"');
     }
     
@@ -376,69 +226,29 @@
         showAlert('🔍 جاري التحقق من اشتراكك...');
         
         try {
-            const result = await completeTask(currentUserId, taskId, task.reward_points);
+            const result = await completeTask(currentUserId, taskId);
             
             if (result && result.success) {
                 userTaskStatus[taskId] = 'completed';
                 saveUserTaskStatus();
                 renderTasks();
-                
-                // تحديث النقاط في localStorage
-                let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`) || '0');
-                currentPoints += task.reward_points;
-                localStorage.setItem(`points_${currentUserId}`, currentPoints);
-                
                 showAlert(`🎉 مبروك! حصلت على ${task.reward_points} نقطة!`);
+                
+                // تحديث الرصيد في الصفحة الرئيسية
+                if (window.opener) {
+                    window.opener.location.reload();
+                }
             } else {
-                // محاكاة للاختبار
-                userTaskStatus[taskId] = 'completed';
-                saveUserTaskStatus();
-                renderTasks();
-                showAlert(`🎉 مبروك! حصلت على ${task.reward_points} نقطة!`);
+                showAlert('❌ لم يتم التحقق من اشتراكك. تأكد من الاشتراك في القناة ثم حاول مرة أخرى.');
             }
         } catch(e) {
             console.error('Error verifying:', e);
-            // محاكاة للاختبار
-            userTaskStatus[taskId] = 'completed';
-            saveUserTaskStatus();
-            renderTasks();
-            showAlert(`🎉 مبروك! حصلت على ${task.reward_points} نقطة!`);
+            showAlert('❌ حدث خطأ في التحقق');
         }
     }
     
-    function toggleLanguage() {
-        let btn = document.querySelector('.lang-btn');
-        if (btn.innerHTML.includes('EN')) {
-            btn.innerHTML = '<i class="fas fa-globe"></i> عربي';
-        } else {
-            btn.innerHTML = '<i class="fas fa-globe"></i> EN';
-        }
-    }
-    
-    function goTo(page) {
-        const pages = {
-            'home': 'index.html',
-            'tasks': 'tasks.html',
-            'wheel': 'wheel.html',
-            'ads': 'ads.html',
-            'ads_posting': 'ads_posting.html',
-            'withdraw': 'withdraw.html',
-            'referral': 'referral.html',
-            'giftcode': 'giftcode.html',
-            'admin': 'admin.html'
-        };
-        if (pages[page]) {
-            window.location.href = pages[page];
-        }
-    }
-    
-    // بدء التشغيل
-    init();
-    
-    window.goToChannel = goToChannel;
-    window.verifyTask = verifyTask;
-    window.toggleLanguage = toggleLanguage;
-    window.goTo = goTo;
+    // تحميل الصفحة
+    loadTasks();
 </script>
 
 </body>
