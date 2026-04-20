@@ -72,7 +72,9 @@
         .page-title { text-align: center; padding: 20px; color: #00BFFF; font-size: 24px; font-weight: 800; }
         
         .wheel-wrapper { position: relative; width: 280px; height: 280px; margin: 20px auto; }
-        canvas { width: 100%; height: 100%; border-radius: 50%; box-shadow: 0 0 30px rgba(0,191,255,0.3); }
+        canvas { width: 100%; height: 100%; border-radius: 50%; box-shadow: 0 0 30px rgba(0,191,255,0.3); transition: box-shadow 0.3s; }
+        canvas:hover { box-shadow: 0 0 40px rgba(0,191,255,0.5); }
+        
         .pointer {
             position: absolute;
             top: -20px;
@@ -84,7 +86,9 @@
             border-right: 15px solid transparent;
             border-top: 35px solid #00BFFF;
             z-index: 10;
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
         }
+        
         .spin-btn {
             display: block;
             margin: 20px auto;
@@ -96,8 +100,11 @@
             font-weight: bold;
             font-size: 18px;
             cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 191, 255, 0.3);
         }
-        .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .spin-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0, 191, 255, 0.5); }
+        .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         
         .stats-card {
             background: linear-gradient(135deg, rgba(0, 30, 50, 0.6), rgba(0, 15, 30, 0.8));
@@ -105,20 +112,36 @@
             padding: 15px;
             margin: 0 16px 16px;
             text-align: center;
+            border: 1px solid rgba(0, 191, 255, 0.2);
         }
-        .stats-value { font-size: 28px; font-weight: 800; color: #FFD700; }
+        .stats-value { font-size: 32px; font-weight: 800; color: #FFD700; }
+        .stats-label { font-size: 14px; color: #aaa; }
         
-        .last-result {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 16px;
-            padding: 12px;
-            margin: 0 16px 20px;
-            text-align: center;
+        /* نافذة النتيجة المنبثقة */
+        .result-toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: linear-gradient(135deg, #1a2a3a, #0f1a24);
+            border: 2px solid #FFD700;
+            border-radius: 60px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
         }
-        
-        .rewards-list { margin: 20px 16px; }
-        .rewards-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-        .reward-badge { background: rgba(0,0,0,0.4); border-radius: 50px; padding: 6px 12px; font-size: 12px; border: 1px solid rgba(0,191,255,0.2); color: #FFD700; }
+        .result-toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .result-toast i { font-size: 28px; color: #FFD700; }
+        .result-toast .reward-value { font-size: 24px; font-weight: bold; color: #FFD700; margin-left: 5px; }
+        .result-toast .reward-text { color: white; font-size: 16px; }
         
         .bottom-nav {
             position: fixed;
@@ -140,14 +163,28 @@
             color: #666;
             cursor: pointer;
             font-size: 11px;
+            transition: color 0.2s;
         }
         .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
         .nav-item.active { color: #00BFFF; }
+        .nav-item:hover { color: #00BFFF; }
         
         .scroll-content {
             overflow-y: auto;
             height: calc(100vh - 130px);
             padding: 15px 0;
+        }
+        
+        /* رسالة الخطأ */
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            border-radius: 12px;
+            padding: 10px;
+            margin: 10px 16px;
+            text-align: center;
+            color: #e74c3c;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -181,19 +218,23 @@
             <canvas id="wheelCanvas" width="500" height="500"></canvas>
         </div>
         
-        <button class="spin-btn" id="spinBtn" onclick="spinWheel()">🔄 ابدأ اللعب</button>
+        <button class="spin-btn" id="spinBtn" onclick="spinWheel()">
+            <i class="fas fa-play"></i> ابدأ اللعب
+        </button>
         
         <div class="stats-card">
-            <div>المحاولات المتبقية اليوم</div>
-            <div class="stats-value" id="remainingSpins">--</div>
+            <div class="stats-label">المحاولات المتبقية اليوم</div>
+            <div class="stats-value" id="remainingSpins">3</div>
         </div>
-        
-        <div class="last-result" id="lastResult">🎲 لم تلعب بعد</div>
-        
-        <div class="rewards-list">
-            <div style="font-size:16px;font-weight:bold;color:#00BFFF;margin-bottom:10px;">🎁 قائمة الجوائز</div>
-            <div class="rewards-grid" id="rewardsGrid"></div>
-        </div>
+    </div>
+</div>
+
+<!-- نافذة النتيجة المنبثقة -->
+<div id="resultToast" class="result-toast">
+    <i class="fas fa-trophy"></i>
+    <div>
+        <span class="reward-value" id="rewardAmount">0</span>
+        <span class="reward-text">نقطة</span>
     </div>
 </div>
 
@@ -206,24 +247,26 @@
 </div>
 
 <script>
-    // currentUserId معرف في config.js
+    // المتغيرات
     let remainingSpins = 0;
     let spinning = false;
     let currentAngle = 0;
     let canvas = null;
     let ctx = null;
     
-    const segments = [
+    // الجوائز - متطابقة تماماً مع ما يظهر في العجلة
+    const SEGMENTS = [
         { name: "10", value: 10, color: "#FF6B6B" },
-        { name: "25", value: 25, color: "#4ECDC4" },
-        { name: "5", value: 5, color: "#45B7D1" },
-        { name: "50", value: 50, color: "#96CEB4" },
-        { name: "15", value: 15, color: "#FFEAA7" },
-        { name: "100", value: 100, color: "#DDA0DD" },
-        { name: "20", value: 20, color: "#98D8C8" },
-        { name: "75", value: 75, color: "#F7B787" }
+        { name: "20", value: 20, color: "#4ECDC4" },
+        { name: "15", value: 15, color: "#45B7D1" },
+        { name: "30", value: 30, color: "#96CEB4" },
+        { name: "25", value: 25, color: "#FFEAA7" },
+        { name: "50", value: 50, color: "#DDA0DD" },
+        { name: "5", value: 5, color: "#98D8C8" },
+        { name: "100", value: 100, color: "#F7B787" }
     ];
     
+    // تهيئة الصفحة
     function init() {
         currentUserId = window.currentUserId;
         if (!currentUserId) {
@@ -231,36 +274,35 @@
         }
         
         initCanvas();
-        renderRewards();
         loadWheelData();
     }
     
+    // تحميل بيانات العجلة
     async function loadWheelData() {
         try {
             const result = await getWheelStatus(currentUserId);
-            
             if (result && result.success) {
                 remainingSpins = result.remaining_spins || 0;
-                updateDisplay();
             } else {
                 remainingSpins = 3;
-                updateDisplay();
             }
+            updateRemainingSpins();
         } catch(e) {
             console.error('Error loading wheel data:', e);
             remainingSpins = 3;
-            updateDisplay();
+            updateRemainingSpins();
         }
     }
     
-    function updateDisplay() {
+    // تحديث عرض المحاولات المتبقية
+    function updateRemainingSpins() {
         const remainingEl = document.getElementById('remainingSpins');
         const spinBtn = document.getElementById('spinBtn');
-        
         if (remainingEl) remainingEl.innerText = remainingSpins;
         if (spinBtn) spinBtn.disabled = remainingSpins <= 0;
     }
     
+    // تهيئة الرسم
     function initCanvas() {
         canvas = document.getElementById('wheelCanvas');
         if (!canvas) return;
@@ -274,24 +316,25 @@
         drawWheel();
     }
     
+    // رسم العجلة
     function drawWheel() {
         if (!ctx) return;
         const size = canvas.width;
         const centerX = size / 2;
         const centerY = size / 2;
         const radius = size / 2;
-        const anglePerSegment = (Math.PI * 2) / segments.length;
+        const anglePerSegment = (Math.PI * 2) / SEGMENTS.length;
         
         ctx.clearRect(0, 0, size, size);
         
-        for (let i = 0; i < segments.length; i++) {
+        for (let i = 0; i < SEGMENTS.length; i++) {
             const startAngle = i * anglePerSegment + currentAngle;
             const endAngle = (i + 1) * anglePerSegment + currentAngle;
             
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-            ctx.fillStyle = segments[i].color;
+            ctx.fillStyle = SEGMENTS[i].color;
             ctx.fill();
             ctx.strokeStyle = "#fff";
             ctx.lineWidth = 2;
@@ -302,13 +345,14 @@
             ctx.rotate(startAngle + anglePerSegment / 2);
             ctx.textAlign = "center";
             ctx.fillStyle = "#1a1a2e";
-            ctx.font = `bold ${Math.max(10, size / 25)}px Cairo`;
-            ctx.fillText(segments[i].name, radius * 0.65, 5);
+            ctx.font = `bold ${Math.max(12, size / 22)}px Cairo`;
+            ctx.fillText(SEGMENTS[i].name, radius * 0.65, 8);
             ctx.restore();
         }
         
+        // الدائرة المركزية
         ctx.beginPath();
-        ctx.arc(centerX, centerY, radius * 0.15, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, radius * 0.12, 0, Math.PI * 2);
         ctx.fillStyle = "#0A0F1A";
         ctx.fill();
         ctx.strokeStyle = "#00BFFF";
@@ -316,18 +360,21 @@
         ctx.stroke();
     }
     
-    function renderRewards() {
-        const container = document.getElementById('rewardsGrid');
-        if (!container) return;
-        container.innerHTML = '';
-        segments.forEach(seg => {
-            const badge = document.createElement('div');
-            badge.className = 'reward-badge';
-            badge.innerHTML = `🎁 ${seg.name} نقطة`;
-            container.appendChild(badge);
-        });
+    // إظهار نافذة النتيجة
+    function showResultToast(reward) {
+        const toast = document.getElementById('resultToast');
+        const rewardAmount = document.getElementById('rewardAmount');
+        rewardAmount.innerText = reward;
+        
+        toast.classList.add('show');
+        
+        // إخفاء النافذة بعد 2.5 ثانية
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2500);
     }
     
+    // دوران العجلة
     async function spinWheel() {
         if (spinning) return;
         if (remainingSpins <= 0) {
@@ -339,10 +386,11 @@
         const spinBtn = document.getElementById('spinBtn');
         if (spinBtn) spinBtn.disabled = true;
         
-        const randomIndex = Math.floor(Math.random() * segments.length);
-        const segmentAngle = (Math.PI * 2) / segments.length;
+        // اختيار جائزة عشوائية
+        const randomIndex = Math.floor(Math.random() * SEGMENTS.length);
+        const segmentAngle = (Math.PI * 2) / SEGMENTS.length;
         const targetAngle = (Math.PI * 2) - (randomIndex * segmentAngle) - (segmentAngle / 2);
-        const spins = 8;
+        const spins = 10; // عدد اللفات
         const newAngle = targetAngle + (Math.PI * 2 * spins);
         
         let start = null;
@@ -362,7 +410,7 @@
             } else {
                 currentAngle = newAngle % (Math.PI * 2);
                 drawWheel();
-                const reward = segments[randomIndex].value;
+                const reward = SEGMENTS[randomIndex].value;
                 claimReward(reward);
             }
         }
@@ -370,15 +418,16 @@
         requestAnimationFrame(animate);
     }
     
+    // منح المكافأة
     async function claimReward(reward) {
         try {
             const result = await spinWheel(currentUserId);
             
             if (result && result.success) {
                 remainingSpins = result.remaining;
-                updateDisplay();
+                updateRemainingSpins();
                 
-                // ✅ تحديث localStorage
+                // تحديث الرصيد المحلي
                 if (typeof addLocalPoints === 'function') {
                     addLocalPoints(currentUserId, reward);
                 } else {
@@ -387,46 +436,46 @@
                     localStorage.setItem(`points_${currentUserId}`, currentPoints);
                 }
                 
+                // إظهار نافذة النتيجة
+                showResultToast(reward);
+                
+                // تحديث آخر نتيجة
                 const lastResult = document.getElementById('lastResult');
                 if (lastResult) {
                     lastResult.innerHTML = `🎉 مبروك! ربحت ${reward} نقطة! 🎉`;
                 }
-                showAlert(`🎡 مبروك! ربحت ${reward} نقطة!`);
             } else {
-                // محاكاة للاختبار
+                // إذا فشل API، نستخدم المحاكاة المحلية
                 remainingSpins--;
-                updateDisplay();
+                updateRemainingSpins();
                 
-                // ✅ تحديث localStorage
-                if (typeof addLocalPoints === 'function') {
-                    addLocalPoints(currentUserId, reward);
-                } else {
-                    let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`)) || 0;
-                    currentPoints += reward;
-                    localStorage.setItem(`points_${currentUserId}`, currentPoints);
-                }
-                
-                const lastResult = document.getElementById('lastResult');
-                if (lastResult) {
-                    lastResult.innerHTML = `🎉 مبروك! ربحت ${reward} نقطة! 🎉`;
-                }
-                showAlert(`🎡 مبروك! ربحت ${reward} نقطة!`);
-            }
-        } catch(e) {
-            console.error('Error claiming reward:', e);
-            remainingSpins--;
-            updateDisplay();
-            
-            // ✅ تحديث localStorage
-            if (typeof addLocalPoints === 'function') {
-                addLocalPoints(currentUserId, reward);
-            } else {
+                // تحديث الرصيد المحلي
                 let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`)) || 0;
                 currentPoints += reward;
                 localStorage.setItem(`points_${currentUserId}`, currentPoints);
+                
+                // تحديث عدد المحاولات في localStorage
+                let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${currentUserId}`)) || 0;
+                localStorage.setItem(`wheel_spins_${currentUserId}`, todaySpins + 1);
+                
+                // إظهار نافذة النتيجة
+                showResultToast(reward);
             }
+        } catch(e) {
+            console.error('Error claiming reward:', e);
             
-            showAlert(`🎡 مبروك! ربحت ${reward} نقطة!`);
+            // محاكاة محلية
+            remainingSpins--;
+            updateRemainingSpins();
+            
+            let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`)) || 0;
+            currentPoints += reward;
+            localStorage.setItem(`points_${currentUserId}`, currentPoints);
+            
+            let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${currentUserId}`)) || 0;
+            localStorage.setItem(`wheel_spins_${currentUserId}`, todaySpins + 1);
+            
+            showResultToast(reward);
         }
         
         spinning = false;
