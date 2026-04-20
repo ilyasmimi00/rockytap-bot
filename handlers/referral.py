@@ -1,6 +1,6 @@
-# handlers/referral.py
+# handlers/referral.py - النسخة المصححة
 """
-معالج الإحالات - نسخة مصححة
+معالج الإحالات - نسخة مصححة بالكامل
 """
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
@@ -73,9 +73,14 @@ class ReferralHandler:
             [InlineKeyboardButton("🔙 رجوع", callback_data='back_to_main')]
         ]
         
-        await update.callback_query.edit_message_text(
-            text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='HTML'
-        )
+        if update.callback_query:
+            await update.callback_query.edit_message_text(
+                text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='HTML'
+            )
+        else:
+            await update.message.reply_text(
+                text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='HTML'
+            )
     
     async def share_referral(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """مشاركة رابط الإحالة"""
@@ -105,10 +110,11 @@ class ReferralHandler:
             InlineKeyboardButton("🔗 نسخ الرابط", callback_data='copy_referral_link')
         ]]
         
-        await update.callback_query.edit_message_text(
-            "📤 اضغط على الزر لمشاركة الرابط مع أصدقائك:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        if update.callback_query:
+            await update.callback_query.edit_message_text(
+                "📤 اضغط على الزر لمشاركة الرابط مع أصدقائك:",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
     
     async def copy_referral_link(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """نسخ رابط الإحالة"""
@@ -133,14 +139,20 @@ class ReferralHandler:
             )
         ]]
         
-        await update.callback_query.edit_message_text(
-            "🔗 اضغط على الزر أدناه لفتح صفحة الإحالات:\n\n"
-            "📋 ستظهر لك رابط الإحالة وإحصائياتك التفصيلية",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        if update.callback_query:
+            await update.callback_query.edit_message_text(
+                "🔗 اضغط على الزر أدناه لفتح صفحة الإحالات:\n\n"
+                "📋 ستظهر لك رابط الإحالة وإحصائياتك التفصيلية",
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
     
-    async def handle_referral_join(self, user_id, referrer_id, bot):
-        """معالجة انضمام مستخدم عبر رابط إحالة - نسخة مصححة"""
+    # ✅ الدالة المصححة بالكامل
+    async def handle_referral_join(self, user_id: int, referrer_id: int, bot):
+        """
+        معالجة انضمام مستخدم عبر رابط إحالة
+        - تستقبل bot كمعامل مباشرة
+        - لا تستخدم self.bot.application.bot
+        """
         result, msg = self.db.create_referral(
             referrer_id=referrer_id,
             referred_id=user_id,
@@ -150,7 +162,7 @@ class ReferralHandler:
         if result:
             logger.info(f"✅ New referral: {referrer_id} -> {user_id}")
             
-            # ✅ الإصلاح: استخدام bot parameter بدلاً من self.bot.application.bot
+            # ✅ الإصلاح: استخدام المعامل bot مباشرة
             try:
                 await bot.send_message(
                     chat_id=referrer_id,

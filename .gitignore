@@ -1,0 +1,10 @@
+# إنشاء ملف .gitignore
+echo "__pycache__/" >> .gitignore
+echo "*.pyc" >> .gitignore
+echo "bot_database.db" >> .gitignore
+echo ".env" >> .gitignore
+
+# إضافة .gitignore إلى git
+git add .gitignore
+git commit -m "إضافة .gitignore لمنع رفع الملفات المؤقتة"
+git push origin master

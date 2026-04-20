@@ -1,18 +1,33 @@
 # database.py
 """
-قاعدة البيانات - النسخة الكاملة مع نظام الإعلانات المتقدم
+قاعدة البيانات - النسخة الكاملة المصححة مع دعم إنشاء المجلدات التلقائي
 """
 
-from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker, scoped_session
-from datetime import datetime, date, timedelta
+import os
 import random
 import string
 import json
-from models import Base, User, Withdrawal, Referral, GiftCode, GiftCodeUsage, AdWatch, WheelSpin, SystemSetting, AdminLog, Task, UserTask, AdPackage, UserAd, AdMember, AdRequest
+from datetime import datetime, date, timedelta
+from sqlalchemy import create_engine, func, text
+from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.exc import SQLAlchemyError
 
-# إعدادات
-DATABASE_URL = 'sqlite:///bot_database.db'
+from models import (
+    Base, User, Withdrawal, Referral, GiftCode, GiftCodeUsage, 
+    AdWatch, WheelSpin, SystemSetting, AdminLog, Task, UserTask, 
+    AdPackage, UserAd, AdMember, AdRequest
+)
+
+# ==================== إعدادات قاعدة البيانات ====================
+
+# ✅ إنشاء مجلد data تلقائياً إذا لم يكن موجوداً
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+os.makedirs(DATA_DIR, exist_ok=True)
+
+# رابط قاعدة البيانات
+DATABASE_URL = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(DATA_DIR, "bot_database.db")}')
+
+# ==================== إعدادات النظام ====================
 POINTS_TO_TON_RATE = 10
 WITHDRAWAL_MIN = 0.02
 DAILY_ADS_LIMIT = 10
@@ -28,26 +43,66 @@ DEFAULT_REFERRAL_SETTINGS = {
     'auto_grant': True
 }
 
+# إعدادات باقات الإعلانات الافتراضية
+DEFAULT_AD_PACKAGES = [
+    {'views_count': 25, 'price_ton': 0.0375, 'bot_share': 0.0005, 'executor_share': 0.001},
+    {'views_count': 50, 'price_ton': 0.075, 'bot_share': 0.0005, 'executor_share': 0.001},
+    {'views_count': 100, 'price_ton': 0.15, 'bot_share': 0.0005, 'executor_share': 0.001},
+    {'views_count': 150, 'price_ton': 0.225, 'bot_share': 0.0005, 'executor_share': 0.001},
+    {'views_count': 200, 'price_ton': 0.30, 'bot_share': 0.0005, 'executor_share': 0.001},
+    {'views_count': 500, 'price_ton': 0.75, 'bot_share': 0.0005, 'executor_share': 0.001},
+    {'views_count': 1000, 'price_ton': 1.5, 'bot_share': 0.0005, 'executor_share': 0.001}
+]
+
 
 class Database:
-    def __init__(self, db_url=DATABASE_URL):
-        self.engine = create_engine(
-            db_url,
-            connect_args={'check_same_thread': False},
-            pool_pre_ping=True
-        )
-        Base.metadata.create_all(self.engine)
-        self.Session = scoped_session(sessionmaker(bind=self.engine))
-        print("✅ Database initialized")
+    """فئة قاعدة البيانات الرئيسية"""
+    
+    def __init__(self, db_url=None):
+        """تهيئة اتصال قاعدة البيانات"""
+        self.db_url = db_url or DATABASE_URL
         
-        # تهيئة الإعدادات الافتراضية
-        self._init_default_settings()
-        self.init_ad_packages()
+        try:
+            # إنشاء محرك قاعدة البيانات
+            self.engine = create_engine(
+                self.db_url,
+                connect_args={'check_same_thread': False} if 'sqlite' in self.db_url else {},
+                pool_pre_ping=True,
+                echo=False
+            )
+            
+            # إنشاء جميع الجداول
+            Base.metadata.create_all(self.engine)
+            
+            # إنشاء جلسة عمل
+            self.Session = scoped_session(sessionmaker(bind=self.engine))
+            
+            print(f"✅ Database initialized: {self.db_url}")
+            
+            # تهيئة الإعدادات الافتراضية
+            self._init_default_settings()
+            self._init_ad_packages()
+            
+        except Exception as e:
+            print(f"❌ Database initialization error: {e}")
+            raise
+    
+    def get_session(self):
+        """الحصول على جلسة قاعدة بيانات"""
+        return self.Session()
+    
+    def close(self):
+        """إغلاق اتصال قاعدة البيانات"""
+        self.Session.remove()
+        self.engine.dispose()
+    
+    # ==================== دوال التهيئة ====================
     
     def _init_default_settings(self):
         """تهيئة الإعدادات الافتراضية في قاعدة البيانات"""
         session = self.get_session()
         try:
+            # إعدادات الإحالات
             existing = session.query(SystemSetting).filter_by(key='referral_settings').first()
             if not existing:
                 setting = SystemSetting(
@@ -56,22 +111,24 @@ class Database:
                     created_at=datetime.now()
                 )
                 session.add(setting)
-                session.commit()
                 print("✅ Referral settings initialized")
             
+            # إعدادات API للإعلانات
             api_key_exists = session.query(SystemSetting).filter_by(key='gramads_api_key').first()
             if not api_key_exists:
                 setting = SystemSetting(key='gramads_api_key', value='', created_at=datetime.now())
                 session.add(setting)
             
+            # النقاط لكل إعلان
             points_exists = session.query(SystemSetting).filter_by(key='points_per_ad').first()
             if not points_exists:
-                setting = SystemSetting(key='points_per_ad', value='15', created_at=datetime.now())
+                setting = SystemSetting(key='points_per_ad', value=str(AD_REWARD_POINTS), created_at=datetime.now())
                 session.add(setting)
             
+            # الحد اليومي للإعلانات
             limit_exists = session.query(SystemSetting).filter_by(key='daily_ad_limit').first()
             if not limit_exists:
-                setting = SystemSetting(key='daily_ad_limit', value='10', created_at=datetime.now())
+                setting = SystemSetting(key='daily_ad_limit', value=str(DAILY_ADS_LIMIT), created_at=datetime.now())
                 session.add(setting)
             
             session.commit()
@@ -79,26 +136,17 @@ class Database:
             
         except Exception as e:
             print(f"Error initializing settings: {e}")
+            session.rollback()
         finally:
             session.close()
     
-    def init_ad_packages(self):
+    def _init_ad_packages(self):
         """تهيئة باقات الإعلانات الافتراضية"""
         session = self.get_session()
         try:
             count = session.query(AdPackage).count()
             if count == 0:
-                packages = [
-                    {'views_count': 25, 'price_ton': 0.0375, 'bot_share': 0.0005, 'executor_share': 0.001},
-                    {'views_count': 50, 'price_ton': 0.075, 'bot_share': 0.0005, 'executor_share': 0.001},
-                    {'views_count': 100, 'price_ton': 0.15, 'bot_share': 0.0005, 'executor_share': 0.001},
-                    {'views_count': 150, 'price_ton': 0.225, 'bot_share': 0.0005, 'executor_share': 0.001},
-                    {'views_count': 200, 'price_ton': 0.30, 'bot_share': 0.0005, 'executor_share': 0.001},
-                    {'views_count': 500, 'price_ton': 0.75, 'bot_share': 0.0005, 'executor_share': 0.001},
-                    {'views_count': 1000, 'price_ton': 1.5, 'bot_share': 0.0005, 'executor_share': 0.001}
-                ]
-                
-                for pkg in packages:
+                for pkg in DEFAULT_AD_PACKAGES:
                     package = AdPackage(
                         views_count=pkg['views_count'],
                         price_ton=pkg['price_ton'],
@@ -109,14 +157,12 @@ class Database:
                     session.add(package)
                 
                 session.commit()
-                print("✅ Ad packages initialized")
+                print(f"✅ {len(DEFAULT_AD_PACKAGES)} ad packages initialized")
         except Exception as e:
             print(f"Error initializing ad packages: {e}")
+            session.rollback()
         finally:
             session.close()
-    
-    def get_session(self):
-        return self.Session()
     
     # ==================== دوال المستخدم ====================
     
@@ -147,6 +193,7 @@ class Database:
             return self._user_to_dict(user)
         except Exception as e:
             print(f"Error in get_or_create_user: {e}")
+            session.rollback()
             return None
         finally:
             session.close()
@@ -162,12 +209,29 @@ class Database:
         finally:
             session.close()
     
-    def get_all_users(self):
-        """جلب جميع المستخدمين"""
+    def get_all_users(self, limit=100, offset=0):
+        """جلب جميع المستخدمين مع دعم التصفح"""
         session = self.get_session()
         try:
-            users = session.query(User).all()
+            users = session.query(User).order_by(User.id.desc()).limit(limit).offset(offset).all()
             return [self._user_to_dict(u) for u in users]
+        finally:
+            session.close()
+    
+    def get_total_users_count(self):
+        """الحصول على عدد المستخدمين الكلي"""
+        session = self.get_session()
+        try:
+            return session.query(User).count()
+        finally:
+            session.close()
+    
+    def get_active_users_count(self, days=7):
+        """الحصول على عدد المستخدمين النشطين خلال الأيام الماضية"""
+        session = self.get_session()
+        try:
+            since_date = datetime.now() - timedelta(days=days)
+            return session.query(User).filter(User.last_active >= since_date).count()
         finally:
             session.close()
     
@@ -194,6 +258,7 @@ class Database:
             return True
         except Exception as e:
             print(f"Error updating balance: {e}")
+            session.rollback()
             return False
         finally:
             session.close()
@@ -210,17 +275,21 @@ class Database:
             return True
         except Exception as e:
             print(f"Error updating block status: {e}")
+            session.rollback()
             return False
         finally:
             session.close()
     
-    def convert_points_to_ton(self, user_id, points):
+    def convert_points_to_ton(self, user_id, points, min_convert=10):
         """تحويل النقاط إلى تون"""
         session = self.get_session()
         try:
             user = session.query(User).filter_by(user_id=user_id).first()
             if not user:
                 return False, "المستخدم غير موجود"
+            
+            if points < min_convert:
+                return False, f"الحد الأدنى للتحويل هو {min_convert} نقاط"
             
             if user.balance_points < points:
                 return False, "النقاط غير كافية"
@@ -234,6 +303,7 @@ class Database:
             return True, f"تم تحويل {points} نقطة إلى {ton_amount:.4f} تون"
         except Exception as e:
             print(f"Error converting points: {e}")
+            session.rollback()
             return False, str(e)
         finally:
             session.close()
@@ -254,9 +324,11 @@ class Database:
             if amount < WITHDRAWAL_MIN:
                 return False, f"الحد الأدنى للسحب هو {WITHDRAWAL_MIN} تون"
             
+            # خصم الرصيد
             user.balance_ton -= amount
             user.total_withdrawn_ton += amount
             
+            # إنشاء طلب السحب
             withdrawal = Withdrawal(
                 user_id=user_id,
                 username=username,
@@ -271,6 +343,7 @@ class Database:
             return True, withdrawal.id
         except Exception as e:
             print(f"Error creating withdrawal: {e}")
+            session.rollback()
             return False, str(e)
         finally:
             session.close()
@@ -288,8 +361,89 @@ class Database:
                 'amount': w.amount,
                 'wallet_address': w.wallet_address,
                 'status': w.status,
+                'rejection_reason': w.rejection_reason,
                 'requested_at': w.requested_at.strftime('%Y-%m-%d %H:%M')
             } for w in withdrawals]
+        finally:
+            session.close()
+    
+    def get_pending_withdrawals(self, limit=50):
+        """الحصول على طلبات السحب المعلقة (للمشرف)"""
+        session = self.get_session()
+        try:
+            withdrawals = session.query(Withdrawal).filter_by(
+                status='pending'
+            ).order_by(Withdrawal.requested_at.asc()).limit(limit).all()
+            
+            return [{
+                'id': w.id,
+                'user_id': w.user_id,
+                'username': w.username,
+                'amount': w.amount,
+                'wallet_address': w.wallet_address,
+                'requested_at': w.requested_at.strftime('%Y-%m-%d %H:%M')
+            } for w in withdrawals]
+        finally:
+            session.close()
+    
+    def get_pending_withdrawals_count(self):
+        """الحصول على عدد طلبات السحب المعلقة"""
+        session = self.get_session()
+        try:
+            return session.query(Withdrawal).filter_by(status='pending').count()
+        finally:
+            session.close()
+    
+    def approve_withdrawal(self, withdrawal_id, admin_id):
+        """الموافقة على طلب سحب"""
+        session = self.get_session()
+        try:
+            withdrawal = session.query(Withdrawal).filter_by(id=withdrawal_id).first()
+            if not withdrawal:
+                return False, "الطلب غير موجود"
+            
+            withdrawal.status = 'paid'
+            withdrawal.paid_at = datetime.now()
+            withdrawal.processed_by = admin_id
+            
+            # تحديث حالة أول سحب للمستخدم
+            user = session.query(User).filter_by(user_id=withdrawal.user_id).first()
+            if user and not user.first_withdrawal_completed:
+                user.first_withdrawal_completed = True
+            
+            session.commit()
+            return True, "تمت الموافقة على السحب"
+        except Exception as e:
+            print(f"Error approving withdrawal: {e}")
+            session.rollback()
+            return False, str(e)
+        finally:
+            session.close()
+    
+    def reject_withdrawal(self, withdrawal_id, admin_id, reason):
+        """رفض طلب سحب مع استرداد الرصيد"""
+        session = self.get_session()
+        try:
+            withdrawal = session.query(Withdrawal).filter_by(id=withdrawal_id).first()
+            if not withdrawal:
+                return False, "الطلب غير موجود"
+            
+            # استرداد الرصيد للمستخدم
+            user = session.query(User).filter_by(user_id=withdrawal.user_id).first()
+            if user:
+                user.balance_ton += withdrawal.amount
+                user.total_withdrawn_ton -= withdrawal.amount
+            
+            withdrawal.status = 'rejected'
+            withdrawal.rejection_reason = reason
+            withdrawal.processed_by = admin_id
+            
+            session.commit()
+            return True, "تم رفض السحب واسترداد الرصيد"
+        except Exception as e:
+            print(f"Error rejecting withdrawal: {e}")
+            session.rollback()
+            return False, str(e)
         finally:
             session.close()
     
@@ -299,6 +453,7 @@ class Database:
         """إنشاء إحالة جديدة"""
         session = self.get_session()
         try:
+            # التحقق من عدم وجود إحالة مسبقة
             existing = session.query(Referral).filter_by(referred_id=referred_id).first()
             if existing:
                 return False, "تمت إحالة هذا المستخدم بالفعل"
@@ -315,7 +470,7 @@ class Database:
                 reward_points = settings['points_value']
             elif settings['reward_type'] == 'ton':
                 reward_ton = settings['ton_value']
-            else:
+            else:  # both
                 reward_points = settings['points_value']
                 reward_ton = settings['ton_value']
             
@@ -331,6 +486,7 @@ class Database:
             )
             session.add(referral)
             
+            # تحديث عدد الإحالات للمحيل
             user = session.query(User).filter_by(user_id=referrer_id).first()
             if user:
                 user.total_referrals += 1
@@ -339,7 +495,36 @@ class Database:
             return True, "تم إنشاء الإحالة بنجاح"
         except Exception as e:
             print(f"Error creating referral: {e}")
+            session.rollback()
             return False, str(e)
+        finally:
+            session.close()
+    
+    def grant_referral_reward(self, referral_id):
+        """منح مكافأة الإحالة بعد اكتمال الشروط"""
+        session = self.get_session()
+        try:
+            referral = session.query(Referral).filter_by(id=referral_id).first()
+            if not referral or referral.is_reward_granted:
+                return False
+            
+            # منح المكافأة للمحيل
+            self.update_user_balance(
+                referral.referrer_id,
+                ton_amount=referral.reward_ton,
+                points_amount=referral.reward_points,
+                update_earned=True
+            )
+            
+            referral.is_reward_granted = True
+            referral.completed_at = datetime.now()
+            session.commit()
+            
+            return True
+        except Exception as e:
+            print(f"Error granting referral reward: {e}")
+            session.rollback()
+            return False
         finally:
             session.close()
     
@@ -356,17 +541,14 @@ class Database:
             total_points_earned = sum(r.reward_points for r in referrals if r.is_reward_granted)
             total_ton_earned = sum(r.reward_ton for r in referrals if r.is_reward_granted)
             
-            settings = self.get_referral_settings()
-            
             referrals_list = []
-            for r in referrals:
+            for r in referrals[:20]:  # آخر 20 إحالة فقط
                 referrals_list.append({
                     'username': r.referred_username or f"مستخدم {r.referred_id}",
                     'date': r.created_at.strftime('%Y-%m-%d'),
                     'status': 'مكتمل' if r.is_reward_granted else 'قيد الانتظار',
                     'reward_points': r.reward_points,
-                    'reward_ton': r.reward_ton,
-                    'reward_type': r.reward_type
+                    'reward_ton': r.reward_ton
                 })
             
             return {
@@ -375,8 +557,7 @@ class Database:
                 'pending': pending,
                 'total_points_earned': total_points_earned,
                 'total_ton_earned': total_ton_earned,
-                'referrals': referrals_list,
-                'settings': settings
+                'referrals': referrals_list
             }
         except Exception as e:
             print(f"Error getting referrals stats: {e}")
@@ -386,8 +567,7 @@ class Database:
                 'pending': 0,
                 'total_points_earned': 0,
                 'total_ton_earned': 0,
-                'referrals': [],
-                'settings': self.get_referral_settings()
+                'referrals': []
             }
         finally:
             session.close()
@@ -434,16 +614,18 @@ class Database:
             return True
         except Exception as e:
             print(f"Error saving referral settings: {e}")
+            session.rollback()
             return False
         finally:
             session.close()
     
-    # ==================== دوال الأكواد ====================
+    # ==================== دوال الأكواد الترويجية ====================
     
     def create_gift_code(self, created_by, reward_points=0, reward_ton=0, max_uses=100, is_admin=False):
         """إنشاء كود ترويجي جديد"""
         session = self.get_session()
         try:
+            # إنشاء كود عشوائي مكون من 8 أحرف
             chars = string.ascii_uppercase + string.digits
             chars = chars.replace('O', '').replace('I', '').replace('0', '').replace('1', '')
             code = ''.join(random.choices(chars, k=8))
@@ -463,6 +645,7 @@ class Database:
             return True, code
         except Exception as e:
             print(f"Error creating gift code: {e}")
+            session.rollback()
             return False, str(e)
         finally:
             session.close()
@@ -482,6 +665,7 @@ class Database:
             if gift_code.used_count >= gift_code.max_uses:
                 return False, "تم استخدام هذا الكود بأقصى عدد مرات"
             
+            # التحقق من أن المستخدم لم يستخدم هذا الكود من قبل
             existing_usage = session.query(GiftCodeUsage).filter_by(
                 code_id=gift_code.id,
                 user_id=user_id
@@ -490,6 +674,7 @@ class Database:
             if existing_usage:
                 return False, "لقد استخدمت هذا الكود من قبل"
             
+            # منح المكافأة
             self.update_user_balance(
                 user_id,
                 ton_amount=gift_code.reward_ton,
@@ -497,6 +682,7 @@ class Database:
                 update_earned=True
             )
             
+            # تسجيل الاستخدام
             usage = GiftCodeUsage(
                 code_id=gift_code.id,
                 user_id=user_id,
@@ -513,7 +699,30 @@ class Database:
             }
         except Exception as e:
             print(f"Error using gift code: {e}")
+            session.rollback()
             return False, str(e)
+        finally:
+            session.close()
+    
+    def get_user_gift_codes_used(self, user_id, limit=10):
+        """الحصول على الأكواد التي استخدمها المستخدم"""
+        session = self.get_session()
+        try:
+            usages = session.query(GiftCodeUsage).filter_by(user_id=user_id).order_by(
+                GiftCodeUsage.used_at.desc()
+            ).limit(limit).all()
+            
+            result = []
+            for usage in usages:
+                code = session.query(GiftCode).filter_by(id=usage.code_id).first()
+                if code:
+                    result.append({
+                        'code': code.code,
+                        'reward_points': code.reward_points,
+                        'reward_ton': code.reward_ton,
+                        'used_at': usage.used_at.strftime('%Y-%m-%d %H:%M')
+                    })
+            return result
         finally:
             session.close()
     
@@ -546,7 +755,24 @@ class Database:
             return True
         except Exception as e:
             print(f"Error adding ad watch: {e}")
+            session.rollback()
             return False
+        finally:
+            session.close()
+    
+    def get_ads_settings(self):
+        """الحصول على إعدادات الإعلانات"""
+        session = self.get_session()
+        try:
+            api_key = session.query(SystemSetting).filter_by(key='gramads_api_key').first()
+            points_per_ad = session.query(SystemSetting).filter_by(key='points_per_ad').first()
+            daily_limit = session.query(SystemSetting).filter_by(key='daily_ad_limit').first()
+            
+            return {
+                'api_key': api_key.value if api_key else None,
+                'points_per_ad': int(points_per_ad.value) if points_per_ad else AD_REWARD_POINTS,
+                'daily_limit': int(daily_limit.value) if daily_limit else DAILY_ADS_LIMIT
+            }
         finally:
             session.close()
     
@@ -585,26 +811,8 @@ class Database:
             return True
         except Exception as e:
             print(f"Error saving ads settings: {e}")
+            session.rollback()
             return False
-        finally:
-            session.close()
-    
-    def get_ads_settings(self):
-        """الحصول على إعدادات الإعلانات"""
-        session = self.get_session()
-        try:
-            api_key = session.query(SystemSetting).filter_by(key='gramads_api_key').first()
-            points_per_ad = session.query(SystemSetting).filter_by(key='points_per_ad').first()
-            daily_limit = session.query(SystemSetting).filter_by(key='daily_ad_limit').first()
-            
-            return {
-                'api_key': api_key.value if api_key else None,
-                'points_per_ad': int(points_per_ad.value) if points_per_ad else 15,
-                'daily_limit': int(daily_limit.value) if daily_limit else 10
-            }
-        except Exception as e:
-            print(f"Error getting ads settings: {e}")
-            return {'api_key': None, 'points_per_ad': 15, 'daily_limit': 10}
         finally:
             session.close()
     
@@ -637,6 +845,7 @@ class Database:
             return True
         except Exception as e:
             print(f"Error adding wheel spin: {e}")
+            session.rollback()
             return False
         finally:
             session.close()
@@ -674,7 +883,7 @@ class Database:
             session.close()
     
     def get_all_tasks(self):
-        """جلب جميع المهام (للأدمن)"""
+        """جلب جميع المهام (للمشرف)"""
         session = self.get_session()
         try:
             tasks = session.query(Task).order_by(Task.id.desc()).all()
@@ -695,7 +904,8 @@ class Database:
                     'reward_points': t.reward_points,
                     'reward_ton': t.reward_ton,
                     'is_active': t.is_active,
-                    'completed_count': completed_count
+                    'completed_count': completed_count,
+                    'order_index': t.order_index
                 })
             return result
         except Exception as e:
@@ -718,7 +928,8 @@ class Database:
                     'channel_link': task.channel_link,
                     'channel_username': task.channel_username,
                     'reward_points': task.reward_points,
-                    'reward_ton': task.reward_ton
+                    'reward_ton': task.reward_ton,
+                    'is_active': task.is_active
                 }
             return None
         except Exception as e:
@@ -731,6 +942,9 @@ class Database:
         """إنشاء مهمة جديدة"""
         session = self.get_session()
         try:
+            # الحصول على أعلى order_index
+            max_order = session.query(func.max(Task.order_index)).scalar() or 0
+            
             task = Task(
                 title=title,
                 description=description,
@@ -740,6 +954,7 @@ class Database:
                 reward_points=reward_points,
                 reward_ton=reward_ton,
                 created_by=created_by,
+                order_index=max_order + 1,
                 created_at=datetime.now()
             )
             session.add(task)
@@ -747,6 +962,28 @@ class Database:
             return True, {'id': task.id, 'title': task.title}
         except Exception as e:
             print(f"Error creating task: {e}")
+            session.rollback()
+            return False, str(e)
+        finally:
+            session.close()
+    
+    def update_task(self, task_id, **kwargs):
+        """تحديث مهمة"""
+        session = self.get_session()
+        try:
+            task = session.query(Task).filter_by(id=task_id).first()
+            if not task:
+                return False, "المهمة غير موجودة"
+            
+            for key, value in kwargs.items():
+                if hasattr(task, key):
+                    setattr(task, key, value)
+            
+            session.commit()
+            return True, "تم تحديث المهمة"
+        except Exception as e:
+            print(f"Error updating task: {e}")
+            session.rollback()
             return False, str(e)
         finally:
             session.close()
@@ -755,12 +992,15 @@ class Database:
         """حذف مهمة"""
         session = self.get_session()
         try:
+            # حذف سجلات المستخدمين للمهمة أولاً
             session.query(UserTask).filter_by(task_id=task_id).delete()
+            # ثم حذف المهمة
             session.query(Task).filter_by(id=task_id).delete()
             session.commit()
             return True
         except Exception as e:
             print(f"Error deleting task: {e}")
+            session.rollback()
             return False
         finally:
             session.close()
@@ -781,6 +1021,7 @@ class Database:
             return True
         except Exception as e:
             print(f"Error creating user task: {e}")
+            session.rollback()
             return False
         finally:
             session.close()
@@ -795,12 +1036,9 @@ class Database:
                     'id': user_task.id,
                     'task_id': user_task.task_id,
                     'status': user_task.status,
-                    'completed_at': user_task.completed_at,
-                    'claimed_at': user_task.claimed_at
+                    'completed_at': user_task.completed_at.strftime('%Y-%m-%d %H:%M') if user_task.completed_at else None,
+                    'claimed_at': user_task.claimed_at.strftime('%Y-%m-%d %H:%M') if user_task.claimed_at else None
                 }
-            return None
-        except Exception as e:
-            print(f"Error getting user task: {e}")
             return None
         finally:
             session.close()
@@ -814,9 +1052,6 @@ class Database:
                 'task_id': ut.task_id,
                 'status': ut.status
             } for ut in user_tasks]
-        except Exception as e:
-            print(f"Error getting user tasks: {e}")
-            return []
         finally:
             session.close()
     
@@ -843,6 +1078,7 @@ class Database:
             return False
         except Exception as e:
             print(f"Error completing user task: {e}")
+            session.rollback()
             return False
         finally:
             session.close()
@@ -850,7 +1086,7 @@ class Database:
     # ==================== دوال الإعلانات المدفوعة ====================
     
     def get_ad_packages(self):
-        """جلب جميع باقات الإعلانات"""
+        """جلب جميع باقات الإعلانات النشطة"""
         session = self.get_session()
         try:
             packages = session.query(AdPackage).filter(AdPackage.is_active == True).all()
@@ -873,8 +1109,10 @@ class Database:
             if not user or user.balance_ton < package.price_ton:
                 return False, f"رصيدك غير كافٍ. تحتاج {package.price_ton} تون"
             
+            # خصم الرصيد
             user.balance_ton -= package.price_ton
             
+            # إنشاء الإعلان
             ad = UserAd(
                 user_id=user_id,
                 title=title,
@@ -962,6 +1200,7 @@ class Database:
             if not ad:
                 return False, "الإعلان غير موجود"
             
+            # استرداد الرصيد إذا كان الإعلان لم يبدأ بعد
             if ad.status == 'pending' and ad.current_views == 0:
                 user = session.query(User).filter_by(user_id=user_id).first()
                 if user:
@@ -973,6 +1212,7 @@ class Database:
             return True, "تم حذف الإعلان بنجاح"
         except Exception as e:
             print(f"Error deleting ad: {e}")
+            session.rollback()
             return False, str(e)
         finally:
             session.close()
@@ -1033,6 +1273,7 @@ class Database:
             ad.current_views += 1
             ad.members_count += 1
             
+            # منح المكافأة للمستخدم
             user = session.query(User).filter_by(user_id=member_id).first()
             if user:
                 if reward_points > 0:
@@ -1042,11 +1283,13 @@ class Database:
                     user.balance_ton += reward_ton
                     user.total_earned_ton += reward_ton
             
+            # تحديث أرباح صاحب الإعلان
             package = session.query(AdPackage).filter_by(id=ad.package_id).first()
             if package:
                 ad.bot_earnings += package.bot_share
                 ad.user_earnings += package.executor_share
             
+            # التحقق من اكتمال الإعلان
             if ad.current_views >= ad.views_count:
                 ad.status = 'completed'
             
@@ -1088,11 +1331,12 @@ class Database:
             return True, "تم التحقق من البوت في قناتك"
         except Exception as e:
             print(f"Error verifying channel: {e}")
+            session.rollback()
             return False, str(e)
         finally:
             session.close()
     
-    # ==================== دوال الأدمن ====================
+    # ==================== دوال سجل الأدمن ====================
     
     def add_admin_log(self, admin_id, action, details=""):
         """تسجيل إجراء أدمن"""
@@ -1109,42 +1353,40 @@ class Database:
             return True
         except Exception as e:
             print(f"Error adding admin log: {e}")
+            session.rollback()
             return False
         finally:
             session.close()
     
-    def get_total_users_count(self):
-        """الحصول على عدد المستخدمين الكلي"""
+    def get_admin_logs(self, limit=100):
+        """جلب سجل إجراءات الأدمن"""
         session = self.get_session()
         try:
-            return session.query(User).count()
+            logs = session.query(AdminLog).order_by(AdminLog.timestamp.desc()).limit(limit).all()
+            return [{
+                'id': l.id,
+                'admin_id': l.admin_id,
+                'action': l.action,
+                'details': l.details,
+                'timestamp': l.timestamp.strftime('%Y-%m-%d %H:%M')
+            } for l in logs]
         finally:
             session.close()
     
-    def get_pending_withdrawals_count(self):
-        """الحصول على عدد طلبات السحب المعلقة"""
-        session = self.get_session()
-        try:
-            return session.query(Withdrawal).filter_by(status='pending').count()
-        finally:
-            session.close()
-    
-    # ==================== دوال المهام المجانية ====================
+    # ==================== دوال المهام المجانية (للسحب) ====================
     
     def get_user_free_tasks_status(self, user_id):
         """
         جلب حالة المهام المجانية للمستخدم
-        هذه الدالة تستخدم في نظام السحب للتحقق من شروط السحب
+        تستخدم في نظام السحب للتحقق من شروط السحب
         """
         session = self.get_session()
         try:
-            # جلب جميع المهام المكتملة للمستخدم
             user_tasks = session.query(UserTask).filter_by(
                 user_id=user_id, 
                 status='completed'
             ).all()
             
-            # إرجاع قائمة بالمهام المكتملة
             return [{'task_id': ut.task_id, 'status': 'completed'} for ut in user_tasks]
         except Exception as e:
             print(f"Error getting free tasks status: {e}")
@@ -1165,8 +1407,38 @@ class Database:
             'total_referrals': user.total_referrals,
             'total_earned_ton': user.total_earned_ton,
             'total_withdrawn_ton': user.total_withdrawn_ton,
+            'total_points_earned': user.total_points_earned,
             'join_date': user.join_date.strftime('%Y-%m-%d %H:%M') if user.join_date else None,
             'last_active': user.last_active.strftime('%Y-%m-%d %H:%M') if user.last_active else None,
             'is_blocked': user.is_blocked,
             'first_withdrawal_completed': user.first_withdrawal_completed
         }
+    
+    def run_migration(self):
+        """تشغيل ترحيلات قاعدة البيانات (إذا لزم الأمر)"""
+        session = self.get_session()
+        try:
+            # إضافة عمود first_withdrawal_completed إذا لم يكن موجوداً
+            try:
+                session.execute(text("ALTER TABLE users ADD COLUMN first_withdrawal_completed BOOLEAN DEFAULT 0"))
+                print("✅ Added first_withdrawal_completed column")
+            except Exception:
+                pass  # العمود موجود بالفعل
+            
+            session.commit()
+            print("✅ Database migration completed")
+        except Exception as e:
+            print(f"Migration error: {e}")
+        finally:
+            session.close()
+
+
+# ==================== إنشاء نسخة واحدة من قاعدة البيانات ====================
+_db_instance = None
+
+def get_db():
+    """الحصول على نسخة واحدة من قاعدة البيانات (Singleton)"""
+    global _db_instance
+    if _db_instance is None:
+        _db_instance = Database()
+    return _db_instance
