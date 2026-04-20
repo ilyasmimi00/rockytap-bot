@@ -198,20 +198,43 @@ async function apiCall(endpoint, data = null, method = 'GET') {
             };
         }
         
-        // بيانات وهمية لعجلة الحظ
+        // ==================== دوال عجلة الحظ المصححة ====================
+        
+        // بيانات وهمية لعجلة الحظ (الحالة)
         if (endpoint.includes('wheel/status')) {
-            let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${8268443100}`)) || 0;
+            let userId = 8268443100;
+            let today = new Date().toDateString();
+            let lastReset = localStorage.getItem(`wheel_last_reset_${userId}`);
+            let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${userId}`)) || 0;
+            
+            // إعادة تعيين المحاولات إذا كان يوم جديد
+            if (lastReset !== today) {
+                todaySpins = 0;
+                localStorage.setItem(`wheel_last_reset_${userId}`, today);
+                localStorage.setItem(`wheel_spins_${userId}`, 0);
+            }
+            
             let remaining = Math.max(0, 3 - todaySpins);
             return {
                 success: true,
                 remaining_spins: remaining,
-                total_points: getLocalBalance(8268443100).points
+                total_points: getLocalBalance(userId).points
             };
         }
         
         // لعب عجلة الحظ
         if (endpoint.includes('wheel/spin')) {
-            let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${8268443100}`)) || 0;
+            let userId = 8268443100;
+            let today = new Date().toDateString();
+            let lastReset = localStorage.getItem(`wheel_last_reset_${userId}`);
+            let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${userId}`)) || 0;
+            
+            // إعادة تعيين المحاولات إذا كان يوم جديد
+            if (lastReset !== today) {
+                todaySpins = 0;
+                localStorage.setItem(`wheel_last_reset_${userId}`, today);
+                localStorage.setItem(`wheel_spins_${userId}`, 0);
+            }
             
             if (todaySpins >= 3) {
                 return {
@@ -220,17 +243,33 @@ async function apiCall(endpoint, data = null, method = 'GET') {
                 };
             }
             
-            const rewards = [5, 10, 15, 20, 25, 50, 75, 100];
+            // الجوائز المتاحة في العجلة
+            const rewards = [5, 10, 15, 20, 25, 30, 50, 100];
             const reward = rewards[Math.floor(Math.random() * rewards.length)];
             
-            let newPoints = addLocalPoints(8268443100, reward);
-            localStorage.setItem(`wheel_spins_${8268443100}`, todaySpins + 1);
+            // زيادة عدد المحاولات
+            todaySpins++;
+            localStorage.setItem(`wheel_spins_${userId}`, todaySpins);
+            
+            // إضافة النقاط
+            let currentBalance = getLocalBalance(userId);
+            let newPoints = currentBalance.points + reward;
+            updateLocalBalance(userId, newPoints, null);
+            
+            // إرسال تحديث للصفحة الرئيسية
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({ 
+                    type: 'UPDATE_BALANCE', 
+                    points: newPoints,
+                    ton: currentBalance.ton
+                }, '*');
+            }
             
             return {
                 success: true,
                 reward: reward,
                 new_points: newPoints,
-                remaining: 2 - todaySpins
+                remaining: 3 - todaySpins
             };
         }
         
@@ -255,18 +294,44 @@ async function apiCall(endpoint, data = null, method = 'GET') {
         
         // طلب سحب
         if (endpoint.includes('wallet/withdraw')) {
+            let userId = 8268443100;
+            let current = getLocalBalance(userId);
+            let amount = data?.amount || 0;
+            let newTon = current.ton - amount;
+            
+            if (newTon < 0) {
+                return {
+                    success: false,
+                    message: '⚠️ الرصيد غير كافٍ'
+                };
+            }
+            
+            updateLocalBalance(userId, null, newTon);
+            
+            // حفظ طلب السحب
+            let withdrawals = JSON.parse(localStorage.getItem(`withdrawals_${userId}`) || '[]');
+            withdrawals.unshift({
+                id: Date.now(),
+                amount: amount,
+                wallet_address: data?.wallet_address,
+                status: 'pending',
+                requested_at: new Date().toLocaleDateString('ar-EG')
+            });
+            localStorage.setItem(`withdrawals_${userId}`, JSON.stringify(withdrawals));
+            
             return {
                 success: true,
                 withdrawal_id: Date.now(),
-                amount: data?.amount,
-                new_balance: getLocalBalance(8268443100).ton - (data?.amount || 0),
+                amount: amount,
+                new_balance: newTon,
                 message: '✅ تم إرسال طلب السحب بنجاح'
             };
         }
         
         // سجل السحوبات
         if (endpoint.includes('wallet/withdrawals')) {
-            let withdrawals = JSON.parse(localStorage.getItem(`withdrawals_${8268443100}`) || '[]');
+            let userId = 8268443100;
+            let withdrawals = JSON.parse(localStorage.getItem(`withdrawals_${userId}`) || '[]');
             return {
                 success: true,
                 withdrawals: withdrawals
