@@ -482,21 +482,194 @@ function sendToBot(action, data) {
     console.log('📤 Send to bot:', action, data);
 }
 
+// ==================== دوال التنبيه والإشعارات (معدلة للإصدارات القديمة) ====================
+
 function showAlert(message) {
+    // محاولة استخدام showAlert من Telegram إذا كانت موجودة
     if (tg && tg.showAlert) {
-        tg.showAlert(message);
-    } else {
-        alert(message);
+        try {
+            tg.showAlert(message);
+            return;
+        } catch(e) {
+            console.log('Telegram showAlert failed, using fallback');
+        }
     }
+    
+    // طريقة بديلة: نافذة HTML مخصصة
+    showCustomAlert(message);
+}
+
+// نافذة تنبيه مخصصة
+function showCustomAlert(message) {
+    // إزالة أي نافذة موجودة مسبقاً
+    let existingAlert = document.getElementById('customAlert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+    
+    // إنشاء نافذة التنبيه
+    let alertDiv = document.createElement('div');
+    alertDiv.id = 'customAlert';
+    alertDiv.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            font-family: 'Cairo', sans-serif;
+        ">
+            <div style="
+                background: #0A0F1A;
+                border: 2px solid #00BFFF;
+                border-radius: 20px;
+                padding: 25px;
+                width: 280px;
+                text-align: center;
+                box-shadow: 0 0 30px rgba(0,191,255,0.3);
+            ">
+                <div style="
+                    font-size: 32px;
+                    margin-bottom: 15px;
+                ">📢</div>
+                <div style="
+                    color: white;
+                    margin-bottom: 20px;
+                    line-height: 1.5;
+                    font-size: 16px;
+                ">${message}</div>
+                <button onclick="this.closest('#customAlert').remove()" style="
+                    background: linear-gradient(135deg, #00BFFF, #0088aa);
+                    border: none;
+                    padding: 10px 25px;
+                    border-radius: 50px;
+                    color: white;
+                    font-weight: bold;
+                    cursor: pointer;
+                    font-size: 14px;
+                    transition: transform 0.2s;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">حسناً</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // إغلاق النافذة عند الضغط خارجها
+    alertDiv.addEventListener('click', function(e) {
+        if (e.target === alertDiv) {
+            alertDiv.remove();
+        }
+    });
 }
 
 function showConfirm(message, callback) {
+    // محاولة استخدام showConfirm من Telegram إذا كانت موجودة
     if (tg && tg.showConfirm) {
-        tg.showConfirm(message, callback);
-    } else {
-        if (confirm(message)) callback(true);
-        else callback(false);
+        try {
+            tg.showConfirm(message, callback);
+            return;
+        } catch(e) {
+            console.log('Telegram showConfirm failed, using fallback');
+        }
     }
+    
+    // طريقة بديلة: نافذة تأكيد مخصصة
+    showCustomConfirm(message, callback);
+}
+
+// نافذة تأكيد مخصصة
+function showCustomConfirm(message, callback) {
+    let existingConfirm = document.getElementById('customConfirm');
+    if (existingConfirm) {
+        existingConfirm.remove();
+    }
+    
+    let confirmDiv = document.createElement('div');
+    confirmDiv.id = 'customConfirm';
+    confirmDiv.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            font-family: 'Cairo', sans-serif;
+        ">
+            <div style="
+                background: #0A0F1A;
+                border: 2px solid #00BFFF;
+                border-radius: 20px;
+                padding: 25px;
+                width: 280px;
+                text-align: center;
+                box-shadow: 0 0 30px rgba(0,191,255,0.3);
+            ">
+                <div style="
+                    font-size: 32px;
+                    margin-bottom: 15px;
+                ">❓</div>
+                <div style="
+                    color: white;
+                    margin-bottom: 20px;
+                    line-height: 1.5;
+                    font-size: 16px;
+                ">${message}</div>
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button id="confirmYes" style="
+                        background: linear-gradient(135deg, #2ecc71, #27ae60);
+                        border: none;
+                        padding: 8px 25px;
+                        border-radius: 50px;
+                        color: white;
+                        font-weight: bold;
+                        cursor: pointer;
+                        transition: transform 0.2s;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">نعم</button>
+                    <button id="confirmNo" style="
+                        background: linear-gradient(135deg, #e74c3c, #c0392b);
+                        border: none;
+                        padding: 8px 25px;
+                        border-radius: 50px;
+                        color: white;
+                        font-weight: bold;
+                        cursor: pointer;
+                        transition: transform 0.2s;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">لا</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(confirmDiv);
+    
+    // ربط callback
+    document.getElementById('confirmYes').onclick = () => {
+        confirmDiv.remove();
+        callback(true);
+    };
+    document.getElementById('confirmNo').onclick = () => {
+        confirmDiv.remove();
+        callback(false);
+    };
+    
+    // إغلاق عند الضغط خارجها
+    confirmDiv.addEventListener('click', function(e) {
+        if (e.target === confirmDiv) {
+            confirmDiv.remove();
+            callback(false);
+        }
+    });
 }
 
 // ==================== دوال التنقل ====================
