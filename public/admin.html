@@ -18,53 +18,180 @@
             background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
             font-family: 'Cairo', sans-serif;
             min-height: 100vh;
-            padding: 15px;
+            padding: 0;
             padding-bottom: 80px;
         }
         .game-container { max-width: 450px; margin: 0 auto; }
         
+        .header-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+            z-index: 1000;
+            max-width: 450px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .header-spacer { height: 65px; }
+        
+        .logo-text {
+            background: linear-gradient(135deg, #00BFFF, #00CED1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        .icon-btn { 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            color: #aaa; 
+            margin-left: 15px;
+            background: transparent;
+            border: none;
+        }
+        .icon-btn:hover { color: #00BFFF; transform: scale(1.1); }
+        
         .page-title { text-align: center; padding: 20px; color: #00BFFF; font-size: 24px; font-weight: 800; }
         
+        .admin-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+            gap: 2px;
+        }
+        .admin-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 5px;
+            background: transparent;
+            border: none;
+            color: #aaa;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Cairo', sans-serif;
+        }
+        .admin-tab i { display: block; font-size: 18px; margin-bottom: 5px; }
+        .admin-tab.active {
+            color: #00BFFF;
+            border-bottom: 2px solid #00BFFF;
+            background: rgba(0, 191, 255, 0.1);
+        }
+        .admin-tab:hover { color: #00BFFF; }
+        
+        .tab-content { display: none; padding: 20px 16px; }
+        .tab-content.active { display: block; }
+        
         .admin-card {
-            background: rgba(0,0,0,0.4);
+            background: rgba(0, 0, 0, 0.4);
             border-radius: 20px;
             padding: 20px;
             margin-bottom: 20px;
-            border: 1px solid rgba(0,191,255,0.3);
+            border: 1px solid rgba(0, 191, 255, 0.3);
+        }
+        .admin-card h4 {
+            color: #00BFFF;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border-bottom: 1px solid rgba(0,191,255,0.2);
+            padding-bottom: 8px;
+        }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 13px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 191, 255, 0.3);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #00BFFF;
         }
         
         .admin-btn {
             background: linear-gradient(135deg, #00BFFF, #0088aa);
             border: none;
-            padding: 12px;
+            padding: 10px 20px;
             border-radius: 50px;
             color: white;
             font-weight: bold;
             cursor: pointer;
+            transition: all 0.3s;
             width: 100%;
             margin-bottom: 10px;
         }
         .admin-btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); }
         .admin-btn-success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .admin-btn-warning { background: linear-gradient(135deg, #e67e22, #d35400); }
+        .admin-btn:hover { transform: scale(1.02); opacity: 0.9; }
         
-        input, select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid #00BFFF;
-            border-radius: 12px;
-            color: white;
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
         }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0,30,50,0.6), rgba(0,15,30,0.8));
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(0,191,255,0.2);
+        }
+        .stat-value { font-size: 24px; font-weight: 800; color: #FFD700; }
+        .stat-label { font-size: 11px; color: #aaa; }
+        
+        .items-list { max-height: 300px; overflow-y: auto; }
+        .list-item {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(0, 191, 255, 0.15);
+        }
+        
+        .two-columns { display: flex; gap: 10px; }
+        .two-columns > div { flex: 1; }
+        
+        .message {
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .message.success { background: rgba(46, 204, 113, 0.2); border: 1px solid #2ecc71; color: #2ecc71; }
+        .message.error { background: rgba(231, 76, 60, 0.2); border: 1px solid #e74c3c; color: #e74c3c; }
         
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
             padding: 10px 20px;
-            border-top: 1px solid rgba(0,191,255,0.2);
+            border-top: 1px solid rgba(0, 191, 255, 0.2);
             max-width: 450px;
             margin: 0 auto;
             width: 100%;
@@ -79,36 +206,252 @@
         }
         .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
         .nav-item.active { color: #00BFFF; }
+        
+        .scroll-content {
+            overflow-y: auto;
+            height: calc(100vh - 130px);
+            padding: 15px 0;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #2ecc71; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
 
 <div class="game-container">
-    <div class="page-title">👑 لوحة التحكم</div>
-    
-    <div class="admin-card">
-        <h4 style="color:#00BFFF;">➕ إضافة رصيد</h4>
-        <input type="text" id="userId" placeholder="معرف المستخدم">
-        <input type="number" id="amount" placeholder="المبلغ">
-        <select id="currency">
-            <option value="ton">تون (TON)</option>
-            <option value="points">نقاط</option>
-        </select>
-        <button class="admin-btn admin-btn-success" onclick="addBalance()">➕ إضافة</button>
+    <div class="header-custom">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <div class="logo-icon d-flex align-items-center justify-content-center" 
+                     style="width: 38px; height: 38px; background: linear-gradient(135deg, #00BFFF, #0088aa); border-radius: 10px;">
+                    <i class="fas fa-gamepad text-white"></i>
+                </div>
+                <span class="logo-text fw-bold fs-5">RockyTap</span>
+            </div>
+            <div class="d-flex gap-3">
+                <i class="fas fa-wallet icon-btn" onclick="goTo('withdraw')"></i>
+                <i class="fas fa-bell icon-btn" onclick="showAlert('🔔 لوحة تحكم المشرف')"></i>
+            </div>
+        </div>
     </div>
     
-    <div class="admin-card">
-        <h4 style="color:#00BFFF;">✨ إنشاء كود ترويجي</h4>
-        <input type="number" id="codeAmount" placeholder="المبلغ (تون)">
-        <input type="number" id="codeUses" placeholder="عدد الاستخدامات" value="100">
-        <button class="admin-btn" onclick="createCode()">✨ إنشاء كود</button>
-    </div>
+    <div class="header-spacer"></div>
     
-    <div class="admin-card">
-        <h4 style="color:#00BFFF;">💱 إعدادات النظام</h4>
-        <label style="color:#aaa;">سعر الصرف (نقطة = كم تون)</label>
-        <input type="number" id="exchangeRate" value="10">
-        <button class="admin-btn" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+    <div class="scroll-content">
+        <div class="page-title">👑 لوحة التحكم</div>
+        
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="dashboard">📊</button>
+            <button class="admin-tab" data-tab="users">👥</button>
+            <button class="admin-tab" data-tab="tasks">📋</button>
+            <button class="admin-tab" data-tab="withdrawals">💰</button>
+            <button class="admin-tab" data-tab="referral">🎁</button>
+            <button class="admin-tab" data-tab="wheel">🎡</button>
+            <button class="admin-tab" data-tab="ads">📺</button>
+            <button class="admin-tab" data-tab="codes">🎫</button>
+            <button class="admin-tab" data-tab="settings">⚙️</button>
+        </div>
+        
+        <div id="messageBox" class="message"></div>
+        
+        <!-- Dashboard -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="statUsers">0</div><div class="stat-label">المستخدمين</div></div>
+                <div class="stat-card"><div class="stat-value" id="statWithdrawals">0</div><div class="stat-label">طلبات السحب</div></div>
+                <div class="stat-card"><div class="stat-value" id="statTasks">0</div><div class="stat-label">المهام</div></div>
+                <div class="stat-card"><div class="stat-value" id="statCodes">0</div><div class="stat-label">الأكواد</div></div>
+            </div>
+            <div class="admin-card">
+                <h4>📊 إحصائيات سريعة</h4>
+                <div class="setting-row"><span>حالة البوت:</span><span id="botStatus" style="color:#2ecc71;">🟢 يعمل</span></div>
+                <div class="setting-row"><span>رابط API:</span><span id="apiUrlStatus">http://158.220.120.209:5000/api</span></div>
+            </div>
+        </div>
+        
+        <!-- إدارة المستخدمين -->
+        <div id="tab-users" class="tab-content">
+            <div class="admin-card">
+                <h4>➕ إضافة رصيد</h4>
+                <div class="two-columns">
+                    <input type="text" id="userId" placeholder="معرف المستخدم">
+                    <input type="number" id="userAmount" placeholder="المبلغ">
+                </div>
+                <div class="two-columns" style="margin-top:10px;">
+                    <select id="userCurrency">
+                        <option value="ton">تون (TON)</option>
+                        <option value="points">نقاط</option>
+                    </select>
+                    <button class="admin-btn admin-btn-success" onclick="adminAddBalance()">➕ إضافة</button>
+                </div>
+            </div>
+            
+            <div class="admin-card">
+                <h4>⛔ حظر/إلغاء حظر مستخدم</h4>
+                <div class="two-columns">
+                    <input type="text" id="banUserId" placeholder="معرف المستخدم">
+                    <button class="admin-btn admin-btn-danger" onclick="adminBanUser()">⛔ حظر</button>
+                </div>
+            </div>
+            
+            <div class="admin-card">
+                <h4>📋 قائمة المستخدمين</h4>
+                <div class="items-list" id="usersList"></div>
+                <button class="admin-btn" onclick="loadUsers()">🔄 تحديث</button>
+            </div>
+        </div>
+        
+        <!-- إدارة المهام -->
+        <div id="tab-tasks" class="tab-content">
+            <div class="admin-card">
+                <h4>➕ إنشاء مهمة جديدة</h4>
+                <div class="form-group"><input type="text" id="taskTitle" placeholder="عنوان المهمة"></div>
+                <div class="form-group"><textarea id="taskDescription" rows="2" placeholder="وصف المهمة"></textarea></div>
+                <div class="two-columns">
+                    <input type="text" id="channelLink" placeholder="رابط القناة">
+                    <input type="text" id="channelUsername" placeholder="معرف القناة (@channel)">
+                </div>
+                <div class="two-columns" style="margin-top:10px;">
+                    <input type="number" id="rewardPoints" placeholder="مكافأة النقاط" value="100">
+                    <input type="number" id="rewardTon" placeholder="مكافأة التون" value="0" step="0.001">
+                </div>
+                <button class="admin-btn admin-btn-success" onclick="adminCreateTask()">➕ إنشاء مهمة</button>
+            </div>
+            
+            <div class="admin-card">
+                <h4>📋 قائمة المهام</h4>
+                <div class="items-list" id="tasksList"></div>
+                <button class="admin-btn" onclick="loadTasks()">🔄 تحديث</button>
+            </div>
+        </div>
+        
+        <!-- طلبات السحب -->
+        <div id="tab-withdrawals" class="tab-content">
+            <div class="admin-card">
+                <h4>💰 الحد الأدنى للسحب</h4>
+                <div class="two-columns">
+                    <input type="number" id="minWithdraw" step="0.01" value="0.02">
+                    <button class="admin-btn" onclick="saveMinWithdraw()">💾 حفظ</button>
+                </div>
+            </div>
+            
+            <div class="admin-card">
+                <h4>📋 طلبات السحب المعلقة</h4>
+                <div class="items-list" id="withdrawalsList"></div>
+                <button class="admin-btn" onclick="loadWithdrawals()">🔄 تحديث</button>
+            </div>
+        </div>
+        
+        <!-- إعدادات الإحالات -->
+        <div id="tab-referral" class="tab-content">
+            <div class="admin-card">
+                <h4>🎁 إعدادات الإحالات</h4>
+                <div class="form-group">
+                    <label>نوع المكافأة</label>
+                    <select id="referralRewardType">
+                        <option value="points">⭐ نقاط فقط</option>
+                        <option value="ton">💰 تون فقط</option>
+                        <option value="both">⭐ نقاط + 💰 تون</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>⭐ قيمة النقاط</label><input type="number" id="referralPoints" value="100"></div>
+                <div class="form-group"><label>💰 قيمة التون</label><input type="number" id="referralTon" value="0.01" step="0.001"></div>
+                <div class="form-group"><label>📋 عدد المهام المطلوبة</label><input type="number" id="referralRequiredTasks" value="6"></div>
+                <button class="admin-btn admin-btn-success" onclick="saveReferralSettings()">💾 حفظ الإعدادات</button>
+            </div>
+        </div>
+        
+        <!-- إعدادات عجلة الحظ -->
+        <div id="tab-wheel" class="tab-content">
+            <div class="admin-card">
+                <h4>🎡 إعدادات عجلة الحظ</h4>
+                <div class="form-group"><label>المحاولات اليومية</label><input type="number" id="dailyWheelSpins" value="3" min="1" max="10"></div>
+                <div class="form-group"><label>الجوائز (افصل بينها بفاصلة)</label><input type="text" id="wheelRewards" value="5,10,15,20,25,30,50,100"></div>
+                <button class="admin-btn admin-btn-success" onclick="saveWheelSettings()">💾 حفظ الإعدادات</button>
+            </div>
+        </div>
+        
+        <!-- إعدادات الإعلانات -->
+        <div id="tab-ads" class="tab-content">
+            <div class="admin-card">
+                <h4>📺 إعدادات الإعلانات</h4>
+                <div class="form-group"><label>⭐ النقاط لكل إعلان</label><input type="number" id="pointsPerAd" value="15"></div>
+                <div class="form-group"><label>📊 الحد اليومي للإعلانات</label><input type="number" id="dailyAdLimit" value="10"></div>
+                <button class="admin-btn admin-btn-success" onclick="saveAdsSettings()">💾 حفظ الإعدادات</button>
+            </div>
+        </div>
+        
+        <!-- إدارة الأكواد -->
+        <div id="tab-codes" class="tab-content">
+            <div class="admin-card">
+                <h4>✨ إنشاء كود ترويجي</h4>
+                <div class="form-group"><label>💰 قيمة التون</label><input type="number" id="codeTon" value="0.01" step="0.001"></div>
+                <div class="form-group"><label>⭐ قيمة النقاط</label><input type="number" id="codePoints" value="100"></div>
+                <div class="form-group"><label>📊 عدد الاستخدامات</label><input type="number" id="codeUses" value="100"></div>
+                <button class="admin-btn admin-btn-success" onclick="adminCreateCode()">✨ إنشاء كود</button>
+            </div>
+            <div class="admin-card">
+                <h4>📋 قائمة الأكواد</h4>
+                <div class="items-list" id="codesList"></div>
+            </div>
+        </div>
+        
+        <!-- إعدادات النظام -->
+        <div id="tab-settings" class="tab-content">
+            <div class="admin-card">
+                <h4>💱 إعدادات العملات</h4>
+                <div class="form-group"><label>سعر الصرف (نقطة = كم تون)</label><input type="number" id="exchangeRate" value="10" step="0.1"></div>
+                <button class="admin-btn" onclick="saveExchangeRate()">💾 حفظ</button>
+            </div>
+            
+            <div class="admin-card">
+                <h4>🔧 إعدادات متقدمة</h4>
+                <div class="setting-row">
+                    <span>وضع الصيانة</span>
+                    <label class="switch"><input type="checkbox" id="maintenanceMode"><span class="slider"></span></label>
+                </div>
+                <button class="admin-btn admin-btn-danger" onclick="clearAllCache()">🗑️ مسح الكاش</button>
+                <button class="admin-btn admin-btn-warning" onclick="restartBot()">🔄 إعادة تشغيل البوت</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -121,44 +464,223 @@
 </div>
 
 <script>
+    let currentAdminId = null;
     
-    function addBalance() {
+    // تهيئة الصفحة
+    function initAdmin() {
+        currentAdminId = window.currentUserId || 8268443100;
+        setupTabs();
+        loadDashboard();
+        loadUsers();
+        loadTasks();
+        loadWithdrawals();
+        loadCodes();
+        loadSettings();
+    }
+    
+    // تبويبات
+    function setupTabs() {
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                let tabId = tab.getAttribute('data-tab');
+                document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(`tab-${tabId}`).classList.add('active');
+            });
+        });
+    }
+    
+    // إظهار رسالة
+    function showMessage(msg, type) {
+        let box = document.getElementById('messageBox');
+        box.textContent = msg;
+        box.className = `message ${type}`;
+        box.style.display = 'block';
+        setTimeout(() => box.style.display = 'none', 3000);
+    }
+    
+    // ==================== Dashboard ====================
+    async function loadDashboard() {
+        try {
+            // محاكاة إحصائيات
+            document.getElementById('statUsers').innerText = '1,234';
+            document.getElementById('statWithdrawals').innerText = '5';
+            document.getElementById('statTasks').innerText = '8';
+            document.getElementById('statCodes').innerText = '12';
+        } catch(e) { console.error(e); }
+    }
+    
+    // ==================== إدارة المستخدمين ====================
+    async function loadUsers() {
+        let container = document.getElementById('usersList');
+        container.innerHTML = '<div class="list-item">جاري التحميل...</div>';
+        // محاكاة بيانات
+        container.innerHTML = `
+            <div class="list-item"><div>👤 admin (8268443100)</div><div>💰 1,250 TON | ⭐ 5,000</div></div>
+            <div class="list-item"><div>👤 user1 (123456789)</div><div>💰 100 TON | ⭐ 500</div></div>
+        `;
+    }
+    
+    function adminAddBalance() {
         let userId = document.getElementById('userId').value.trim();
-        let amount = parseFloat(document.getElementById('amount').value);
-        let currency = document.getElementById('currency').value;
+        let amount = parseFloat(document.getElementById('userAmount').value);
+        let currency = document.getElementById('userCurrency').value;
         
         if (!userId || !amount) {
-            showAlert('⚠️ الرجاء إدخال البيانات');
+            showMessage('⚠️ الرجاء إدخال البيانات', 'error');
             return;
         }
         
         sendToBot('admin_add_balance', { user_id: userId, amount: amount, currency: currency });
-        showAlert(`✅ تم إضافة ${amount} ${currency} للمستخدم ${userId}`);
+        showMessage(`✅ تم إضافة ${amount} ${currency} للمستخدم ${userId}`, 'success');
         
         document.getElementById('userId').value = '';
-        document.getElementById('amount').value = '';
+        document.getElementById('userAmount').value = '';
     }
     
-    function createCode() {
-        let amount = parseFloat(document.getElementById('codeAmount').value);
-        let uses = parseInt(document.getElementById('codeUses').value);
+    function adminBanUser() {
+        let userId = document.getElementById('banUserId').value.trim();
+        if (!userId) { showMessage('⚠️ الرجاء إدخال معرف المستخدم', 'error'); return; }
         
-        if (!amount) {
-            showAlert('⚠️ الرجاء إدخال المبلغ');
+        sendToBot('admin_ban_user', { user_id: userId });
+        showMessage(`✅ تم حظر المستخدم ${userId}`, 'success');
+        document.getElementById('banUserId').value = '';
+    }
+    
+    // ==================== إدارة المهام ====================
+    async function loadTasks() {
+        let container = document.getElementById('tasksList');
+        container.innerHTML = '<div class="list-item">جاري التحميل...</div>';
+        container.innerHTML = `
+            <div class="list-item"><div>📺 قناة RockyTap</div><div>⭐ 100 نقطة</div></div>
+            <div class="list-item"><div>📰 قناة الأخبار</div><div>⭐ 150 نقطة + 💰 0.01 تون</div></div>
+        `;
+    }
+    
+    function adminCreateTask() {
+        let title = document.getElementById('taskTitle').value.trim();
+        let description = document.getElementById('taskDescription').value.trim();
+        let channelLink = document.getElementById('channelLink').value.trim();
+        let channelUsername = document.getElementById('channelUsername').value.trim();
+        let rewardPoints = parseFloat(document.getElementById('rewardPoints').value) || 0;
+        let rewardTon = parseFloat(document.getElementById('rewardTon').value) || 0;
+        
+        if (!title || !channelLink) {
+            showMessage('⚠️ عنوان المهمة ورابط القناة مطلوبان', 'error');
             return;
         }
         
-        sendToBot('admin_create_code', { amount: amount, max_uses: uses });
-        showAlert(`✨ تم إنشاء كود ترويجي بقيمة ${amount} تون`);
+        sendToBot('admin_create_task', { title, description, channel_link: channelLink, channel_username: channelUsername, reward_points: rewardPoints, reward_ton: rewardTon });
+        showMessage(`✅ تم إنشاء المهمة "${title}"`, 'success');
         
-        document.getElementById('codeAmount').value = '';
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskDescription').value = '';
+        document.getElementById('channelLink').value = '';
+        document.getElementById('channelUsername').value = '';
     }
     
-    function saveSettings() {
-        let rate = document.getElementById('exchangeRate').value;
-        sendToBot('admin_save_settings', { exchange_rate: rate });
-        showAlert('✅ تم حفظ الإعدادات');
+    // ==================== طلبات السحب ====================
+    async function loadWithdrawals() {
+        let container = document.getElementById('withdrawalsList');
+        container.innerHTML = '<div class="list-item">لا توجد طلبات معلقة</div>';
     }
+    
+    function saveMinWithdraw() {
+        let min = document.getElementById('minWithdraw').value;
+        sendToBot('admin_save_settings', { min_withdraw: min });
+        showMessage(`✅ تم حفظ الحد الأدنى للسحب: ${min} TON`, 'success');
+    }
+    
+    // ==================== إعدادات الإحالات ====================
+    function saveReferralSettings() {
+        let settings = {
+            reward_type: document.getElementById('referralRewardType').value,
+            points_value: document.getElementById('referralPoints').value,
+            ton_value: document.getElementById('referralTon').value,
+            required_tasks: document.getElementById('referralRequiredTasks').value
+        };
+        sendToBot('admin_save_referral', settings);
+        showMessage('✅ تم حفظ إعدادات الإحالات', 'success');
+    }
+    
+    // ==================== إعدادات عجلة الحظ ====================
+    function saveWheelSettings() {
+        let spins = document.getElementById('dailyWheelSpins').value;
+        let rewards = document.getElementById('wheelRewards').value;
+        sendToBot('admin_save_settings', { daily_wheel_spins: spins, wheel_rewards: rewards });
+        showMessage('✅ تم حفظ إعدادات عجلة الحظ', 'success');
+    }
+    
+    // ==================== إعدادات الإعلانات ====================
+    function saveAdsSettings() {
+        let points = document.getElementById('pointsPerAd').value;
+        let limit = document.getElementById('dailyAdLimit').value;
+        sendToBot('admin_save_settings', { points_per_ad: points, daily_ad_limit: limit });
+        showMessage('✅ تم حفظ إعدادات الإعلانات', 'success');
+    }
+    
+    // ==================== إدارة الأكواد ====================
+    async function loadCodes() {
+        let container = document.getElementById('codesList');
+        container.innerHTML = '<div class="list-item">جاري التحميل...</div>';
+        container.innerHTML = '<div class="list-item">🎫 WELCOME100 (100 نقطة) - 50/100</div>';
+    }
+    
+    function adminCreateCode() {
+        let ton = parseFloat(document.getElementById('codeTon').value) || 0;
+        let points = parseInt(document.getElementById('codePoints').value) || 0;
+        let uses = parseInt(document.getElementById('codeUses').value) || 100;
+        
+        sendToBot('admin_create_code', { reward_ton: ton, reward_points: points, max_uses: uses });
+        showMessage(`✨ تم إنشاء كود ترويجي جديد`, 'success');
+    }
+    
+    // ==================== إعدادات النظام ====================
+    function loadSettings() {
+        document.getElementById('exchangeRate').value = localStorage.getItem('exchangeRate') || '10';
+    }
+    
+    function saveExchangeRate() {
+        let rate = document.getElementById('exchangeRate').value;
+        localStorage.setItem('exchangeRate', rate);
+        sendToBot('admin_save_settings', { exchange_rate: rate });
+        showMessage('✅ تم حفظ سعر الصرف', 'success');
+    }
+    
+    function clearAllCache() {
+        if (confirm('هل أنت متأكد من مسح جميع الكاش؟')) {
+            localStorage.clear();
+            showMessage('✅ تم مسح الكاش بنجاح', 'success');
+            setTimeout(() => location.reload(), 1500);
+        }
+    }
+    
+    function restartBot() {
+        if (confirm('هل أنت متأكد من إعادة تشغيل البوت؟')) {
+            sendToBot('admin_restart_bot', {});
+            showMessage('🔄 جاري إعادة تشغيل البوت...', 'success');
+        }
+    }
+    
+    // بدء التشغيل
+    initAdmin();
+    
+    window.adminAddBalance = adminAddBalance;
+    window.adminBanUser = adminBanUser;
+    window.adminCreateTask = adminCreateTask;
+    window.adminCreateCode = adminCreateCode;
+    window.saveMinWithdraw = saveMinWithdraw;
+    window.saveReferralSettings = saveReferralSettings;
+    window.saveWheelSettings = saveWheelSettings;
+    window.saveAdsSettings = saveAdsSettings;
+    window.saveExchangeRate = saveExchangeRate;
+    window.clearAllCache = clearAllCache;
+    window.restartBot = restartBot;
+    window.loadUsers = loadUsers;
+    window.loadTasks = loadTasks;
+    window.loadWithdrawals = loadWithdrawals;
+    window.loadCodes = loadCodes;
 </script>
 
 </body>
