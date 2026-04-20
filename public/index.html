@@ -194,30 +194,6 @@
             height: calc(100vh - 130px);
             padding: 15px 0;
         }
-        
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #00BFFF;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
@@ -385,12 +361,11 @@
 </div>
 
 <script>
-    let tg = null;
     let currentUserId = null;
     let currentUserData = null;
     const ADMIN_IDS = [8268443100];
     
-    // دالة لتحديث عرض الرصيد عند استقبال رسالة
+    // دالة لتحديث عرض الرصيد
     function updateBalanceDisplay(points, ton) {
         if (points !== undefined && points !== null) {
             document.getElementById('pointsBalance').innerText = Math.floor(points);
@@ -400,71 +375,89 @@
         }
     }
     
+    // تحميل الرصيد من localStorage
+    function loadLocalBalance() {
+        let savedPoints = localStorage.getItem(`points_${currentUserId}`);
+        let savedTon = localStorage.getItem(`ton_${currentUserId}`);
+        
+        if (savedPoints && parseInt(savedPoints) > 0) {
+            document.getElementById('pointsBalance').innerText = savedPoints;
+            console.log(`📦 Loaded points from localStorage: ${savedPoints}`);
+        }
+        if (savedTon && parseFloat(savedTon) > 0) {
+            document.getElementById('tonBalance').innerText = parseFloat(savedTon).toFixed(4);
+            console.log(`📦 Loaded TON from localStorage: ${savedTon}`);
+        }
+    }
+    
     // تهيئة WebApp
     function init() {
-        tg = initWebApp();
-        let user = getUser();
-        if (user) {
-            currentUserId = user.id;
-            document.getElementById('usernameDisplay').innerHTML = '<i class="fas fa-at"></i> ' + (user.username || user.first_name || 'مستخدم');
+        // تهيئة Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            let tg = window.Telegram.WebApp;
+            tg.expand();
+            tg.ready();
+            
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                currentUserId = tg.initDataUnsafe.user.id;
+                window.currentUserId = currentUserId;
+            }
         }
         
-        // التحقق من صلاحيات الأدمن
-        checkAdminStatus();
+        if (!currentUserId) {
+            currentUserId = 8268443100;
+            window.currentUserId = currentUserId;
+        }
         
-        // تحميل البيانات
+        document.getElementById('usernameDisplay').innerHTML = '<i class="fas fa-at"></i> مستخدم تجريبي';
+        
+        // تحميل الرصيد من localStorage أولاً
+        loadLocalBalance();
+        
+        // ثم من API
         loadUserData();
+        
+        // التحقق من صلاحيات الأدمن
+        if (ADMIN_IDS.includes(currentUserId)) {
+            document.getElementById('adminBtn').style.display = 'block';
+            document.getElementById('adminNavBtn').style.display = 'block';
+        }
         
         // تحديث كل 30 ثانية
         setInterval(loadUserData, 30000);
     }
     
-    async function checkAdminStatus() {
-        try {
-            if (ADMIN_IDS.includes(currentUserId)) {
-                document.getElementById('adminBtn').style.display = 'block';
-                document.getElementById('adminNavBtn').style.display = 'block';
+    // استقبال تحديثات الرصيد من الصفحات الأخرى
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'UPDATE_BALANCE') {
+            console.log('📨 Index received balance update:', event.data);
+            if (event.data.points !== undefined) {
+                document.getElementById('pointsBalance').innerText = Math.floor(event.data.points);
+                localStorage.setItem(`points_${currentUserId}`, event.data.points);
             }
-        } catch(e) {}
-    }
+            if (event.data.ton !== undefined) {
+                document.getElementById('tonBalance').innerText = event.data.ton.toFixed(4);
+                localStorage.setItem(`ton_${currentUserId}`, event.data.ton);
+            }
+        }
+    });
     
     async function loadUserData() {
-        currentUserId = window.currentUserId || (window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
-        if (!currentUserId) {
-            currentUserId = 8268443100;
-        }
-        
-        // في وضع Demo Mode، استخدم localStorage أولاً
-        if (window.DEMO_MODE) {
-            let localBalance = getLocalBalance(currentUserId);
-            if (localBalance.points > 0 || localBalance.ton > 0) {
-                document.getElementById('tonBalance').innerText = localBalance.ton.toFixed(4);
-                document.getElementById('pointsBalance').innerText = localBalance.points;
-            }
-        }
-        
         try {
             const result = await getUserData(currentUserId);
             if (result && result.success) {
                 document.getElementById('tonBalance').innerText = result.ton.toFixed(4);
                 document.getElementById('pointsBalance').innerText = Math.floor(result.points);
-                document.getElementById('usernameDisplay').innerHTML = '<i class="fas fa-at"></i> ' + (result.username || 'مستخدم');
                 if (result.total_referrals !== undefined) {
                     document.getElementById('totalReferrals').innerText = result.total_referrals;
                 }
                 
-                // حفظ في localStorage للمزامنة
-                if (window.updateLocalBalance) {
-                    window.updateLocalBalance(currentUserId, result.points, result.ton);
-                }
+                // حفظ في localStorage
+                localStorage.setItem(`points_${currentUserId}`, result.points);
+                localStorage.setItem(`ton_${currentUserId}`, result.ton);
             }
         } catch(e) {
             console.error('Error loading user:', e);
-        }
-        
-        // إظهار زر الأدمن إذا كان المستخدم أدمن
-        if (ADMIN_IDS.includes(currentUserId)) {
-            document.getElementById('adminNavBtn').style.display = 'block';
         }
     }
     
@@ -536,30 +529,9 @@
         }
     }
     
-    // استقبال تحديثات الرصيد من الصفحات الأخرى (مثل wheel.html)
-    window.addEventListener('message', function(event) {
-        if (event.data && event.data.type === 'UPDATE_BALANCE') {
-            console.log('📨 Index received balance update:', event.data);
-            if (event.data.points !== undefined) {
-                document.getElementById('pointsBalance').innerText = Math.floor(event.data.points);
-                // تحديث localStorage
-                if (window.updateLocalBalance) {
-                    window.updateLocalBalance(currentUserId, event.data.points, null);
-                }
-            }
-            if (event.data.ton !== undefined) {
-                document.getElementById('tonBalance').innerText = event.data.ton.toFixed(4);
-                if (window.updateLocalBalance) {
-                    window.updateLocalBalance(currentUserId, null, event.data.ton);
-                }
-            }
-        }
-    });
-    
     // بدء التشغيل
     init();
     
-    // دوال عامة
     window.goTo = goTo;
     window.toggleLanguage = toggleLanguage;
     window.openConvertModal = openConvertModal;

@@ -117,7 +117,6 @@
         .stats-value { font-size: 32px; font-weight: 800; color: #FFD700; }
         .stats-label { font-size: 14px; color: #aaa; }
         
-        /* نافذة النتيجة المنبثقة */
         .result-toast {
             position: fixed;
             bottom: 100px;
@@ -174,18 +173,6 @@
             height: calc(100vh - 130px);
             padding: 15px 0;
         }
-        
-        /* رسالة الخطأ */
-        .error-message {
-            background: rgba(231, 76, 60, 0.2);
-            border: 1px solid #e74c3c;
-            border-radius: 12px;
-            padding: 10px;
-            margin: 10px 16px;
-            text-align: center;
-            color: #e74c3c;
-            font-size: 14px;
-        }
     </style>
 </head>
 <body>
@@ -229,7 +216,6 @@
     </div>
 </div>
 
-<!-- نافذة النتيجة المنبثقة -->
 <div id="resultToast" class="result-toast">
     <i class="fas fa-trophy"></i>
     <div>
@@ -247,14 +233,13 @@
 </div>
 
 <script>
-    // المتغيرات
     let remainingSpins = 0;
     let spinning = false;
     let currentAngle = 0;
     let canvas = null;
     let ctx = null;
+    let currentUserId = null;
     
-    // الجوائز - متطابقة تماماً مع ما يظهر في العجلة
     const SEGMENTS = [
         { name: "10", value: 10, color: "#FF6B6B" },
         { name: "20", value: 20, color: "#4ECDC4" },
@@ -266,18 +251,17 @@
         { name: "100", value: 100, color: "#F7B787" }
     ];
     
-    // تهيئة الصفحة
     function init() {
         currentUserId = window.currentUserId;
         if (!currentUserId) {
             currentUserId = 8268443100;
+            window.currentUserId = currentUserId;
         }
         
         initCanvas();
         loadWheelData();
     }
     
-    // تحميل بيانات العجلة
     async function loadWheelData() {
         try {
             const result = await getWheelStatus(currentUserId);
@@ -294,7 +278,6 @@
         }
     }
     
-    // تحديث عرض المحاولات المتبقية
     function updateRemainingSpins() {
         const remainingEl = document.getElementById('remainingSpins');
         const spinBtn = document.getElementById('spinBtn');
@@ -302,7 +285,6 @@
         if (spinBtn) spinBtn.disabled = remainingSpins <= 0;
     }
     
-    // تهيئة الرسم
     function initCanvas() {
         canvas = document.getElementById('wheelCanvas');
         if (!canvas) return;
@@ -316,7 +298,6 @@
         drawWheel();
     }
     
-    // رسم العجلة
     function drawWheel() {
         if (!ctx) return;
         const size = canvas.width;
@@ -350,7 +331,6 @@
             ctx.restore();
         }
         
-        // الدائرة المركزية
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius * 0.12, 0, Math.PI * 2);
         ctx.fillStyle = "#0A0F1A";
@@ -360,21 +340,17 @@
         ctx.stroke();
     }
     
-    // إظهار نافذة النتيجة
     function showResultToast(reward) {
         const toast = document.getElementById('resultToast');
         const rewardAmount = document.getElementById('rewardAmount');
         rewardAmount.innerText = reward;
         
         toast.classList.add('show');
-        
-        // إخفاء النافذة بعد 2.5 ثانية
         setTimeout(() => {
             toast.classList.remove('show');
         }, 2500);
     }
     
-    // دوران العجلة
     async function spinWheel() {
         if (spinning) return;
         if (remainingSpins <= 0) {
@@ -386,11 +362,10 @@
         const spinBtn = document.getElementById('spinBtn');
         if (spinBtn) spinBtn.disabled = true;
         
-        // اختيار جائزة عشوائية
         const randomIndex = Math.floor(Math.random() * SEGMENTS.length);
         const segmentAngle = (Math.PI * 2) / SEGMENTS.length;
         const targetAngle = (Math.PI * 2) - (randomIndex * segmentAngle) - (segmentAngle / 2);
-        const spins = 10; // عدد اللفات
+        const spins = 10;
         const newAngle = targetAngle + (Math.PI * 2 * spins);
         
         let start = null;
@@ -418,7 +393,6 @@
         requestAnimationFrame(animate);
     }
     
-    // منح المكافأة
     async function claimReward(reward) {
         try {
             const result = await spinWheel(currentUserId);
@@ -427,50 +401,43 @@
                 remainingSpins = result.remaining;
                 updateRemainingSpins();
                 
-                // تحديث الرصيد المحلي
-                if (typeof addLocalPoints === 'function') {
-                    addLocalPoints(currentUserId, reward);
-                } else {
-                    let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`)) || 0;
-                    currentPoints += reward;
-                    localStorage.setItem(`points_${currentUserId}`, currentPoints);
-                }
-                
-                // إظهار نافذة النتيجة
-                showResultToast(reward);
-                
-                // تحديث آخر نتيجة
-                const lastResult = document.getElementById('lastResult');
-                if (lastResult) {
-                    lastResult.innerHTML = `🎉 مبروك! ربحت ${reward} نقطة! 🎉`;
-                }
-            } else {
-                // إذا فشل API، نستخدم المحاكاة المحلية
-                remainingSpins--;
-                updateRemainingSpins();
-                
-                // تحديث الرصيد المحلي
+                // ✅ حفظ الرصيد في localStorage مباشرة
                 let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`)) || 0;
-                currentPoints += reward;
-                localStorage.setItem(`points_${currentUserId}`, currentPoints);
+                let newPoints = currentPoints + reward;
+                localStorage.setItem(`points_${currentUserId}`, newPoints);
                 
-                // تحديث عدد المحاولات في localStorage
+                // ✅ حفظ عدد المحاولات
                 let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${currentUserId}`)) || 0;
                 localStorage.setItem(`wheel_spins_${currentUserId}`, todaySpins + 1);
                 
-                // إظهار نافذة النتيجة
+                console.log(`💰 ربحت ${reward} نقطة! الرصيد القديم: ${currentPoints}, الرصيد الجديد: ${newPoints}`);
+                
+                showResultToast(reward);
+                
+            } else {
+                // محاكاة محلية
+                remainingSpins--;
+                updateRemainingSpins();
+                
+                let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`)) || 0;
+                let newPoints = currentPoints + reward;
+                localStorage.setItem(`points_${currentUserId}`, newPoints);
+                
+                let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${currentUserId}`)) || 0;
+                localStorage.setItem(`wheel_spins_${currentUserId}`, todaySpins + 1);
+                
+                console.log(`💰 (محاكاة) ربحت ${reward} نقطة! الرصيد الجديد: ${newPoints}`);
                 showResultToast(reward);
             }
         } catch(e) {
             console.error('Error claiming reward:', e);
             
-            // محاكاة محلية
             remainingSpins--;
             updateRemainingSpins();
             
             let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`)) || 0;
-            currentPoints += reward;
-            localStorage.setItem(`points_${currentUserId}`, currentPoints);
+            let newPoints = currentPoints + reward;
+            localStorage.setItem(`points_${currentUserId}`, newPoints);
             
             let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${currentUserId}`)) || 0;
             localStorage.setItem(`wheel_spins_${currentUserId}`, todaySpins + 1);
