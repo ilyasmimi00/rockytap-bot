@@ -83,10 +83,9 @@ function addLocalTon(userId, ton) {
     return newTon;
 }
 
-// ==================== دوال API مع دعم Demo Mode (معطل حالياً) ====================
+// ==================== دوال API ====================
 
 async function apiCall(endpoint, data = null, method = 'GET') {
-    // ========== وضع الاتصال الحقيقي بالخادم ==========
     const url = `${API_URL}/${endpoint}`;
     const options = {
         method: method,
@@ -111,54 +110,54 @@ async function apiCall(endpoint, data = null, method = 'GET') {
     }
 }
 
-// ==================== دوال المستخدم ====================
+// ==================== دوال المستخدم (مسارات متوافقة مع bot.py) ====================
 
 async function getUserData(userId) {
-    return await apiCall(`users/me?user_id=${userId}`);
+    return await apiCall(`user?user_id=${userId}`);
 }
 
 async function getReferralStats(userId) {
-    return await apiCall(`referrals/stats?user_id=${userId}`);
+    return await apiCall(`referral_stats?user_id=${userId}`);
 }
 
 async function getTasks(userId) {
-    return await apiCall(`tasks/list?user_id=${userId}`);
+    return await apiCall(`tasks?user_id=${userId}`);
 }
 
 async function completeTask(userId, taskId) {
-    return await apiCall(`tasks/complete?user_id=${userId}&task_id=${taskId}`, null, 'POST');
+    return await apiCall(`complete_task`, { user_id: userId, task_id: taskId }, 'POST');
 }
 
 async function getAds(userId) {
-    return await apiCall(`ads/list?user_id=${userId}`);
+    return await apiCall(`ads?user_id=${userId}`);
 }
 
 async function watchAd(userId, reward = 15) {
-    return await apiCall('ads/watch', { user_id: userId, reward: reward }, 'POST');
+    return await apiCall(`watch_ad`, { user_id: userId, reward: reward }, 'POST');
 }
 
 async function getWheelStatus(userId) {
-    return await apiCall(`wheel/status?user_id=${userId}`);
+    return await apiCall(`wheel_status?user_id=${userId}`);
 }
 
 async function spinWheel(userId) {
-    return await apiCall('wheel/spin', { user_id: userId }, 'POST');
+    return await apiCall(`spin_wheel`, { user_id: userId }, 'POST');
 }
 
 async function convertPoints(userId, points) {
-    return await apiCall('wallet/convert', { user_id: userId, points: points }, 'POST');
+    return await apiCall(`convert`, { user_id: userId, points: points }, 'POST');
 }
 
 async function requestWithdraw(userId, amount, wallet, username) {
-    return await apiCall('wallet/withdraw', { user_id: userId, amount: amount, wallet_address: wallet, username: username }, 'POST');
+    return await apiCall(`request_withdraw`, { user_id: userId, amount: amount, wallet_address: wallet, username: username }, 'POST');
 }
 
 async function getUserWithdrawals(userId) {
-    return await apiCall(`wallet/withdrawals?user_id=${userId}`);
+    return await apiCall(`withdrawals?user_id=${userId}`);
 }
 
 async function redeemCode(userId, code) {
-    return await apiCall('giftcode/redeem', { user_id: userId, code: code }, 'POST');
+    return await apiCall(`redeem_code`, { user_id: userId, code: code }, 'POST');
 }
 
 // ==================== دوال WebApp ====================
