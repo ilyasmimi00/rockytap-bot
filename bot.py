@@ -1,4 +1,4 @@
-# bot.py - النسخة الموحدة مع API مدمج (مصححة)
+# bot.py - RockyTap Bot Unified Version
 """
 RockyTap Bot - Unified Version
 يجمع بين بوت تليجرام و API في ملف واحد
@@ -52,7 +52,7 @@ class RockyTapBot:
         
         # تهيئة Flask API
         self.flask_app = Flask(__name__, static_folder='public', static_url_path='')
-        CORS(self.flask_app)
+        CORS(self.flask_app, origins='*')
         
         # تهيئة المعالجات
         self.init_handlers()
@@ -160,6 +160,15 @@ class RockyTapBot:
                 return jsonify({'success': True, 'tasks': tasks})
             except Exception as e:
                 logger.error(f"API Error /tasks: {e}")
+                return jsonify({'success': False, 'message': str(e), 'tasks': []})
+        
+        @self.flask_app.route('/api/tasks/list', methods=['GET'])
+        def get_tasks_list():
+            try:
+                tasks = self.db.get_active_tasks()
+                return jsonify({'success': True, 'tasks': tasks})
+            except Exception as e:
+                logger.error(f"API Error /tasks/list: {e}")
                 return jsonify({'success': False, 'message': str(e), 'tasks': []})
         
         @self.flask_app.route('/api/complete_task', methods=['POST'])
@@ -613,7 +622,6 @@ class RockyTapBot:
         """معالجة الرسائل النصية"""
         user_id = self._get_user_id(update)
         
-        # إذا لم نتمكن من الحصول على معرف المستخدم، تجاهل الرسالة
         if not user_id:
             logger.warning("Cannot get user_id from update, ignoring message")
             return
@@ -702,7 +710,7 @@ class RockyTapBot:
         logger.info(f"🚀 {self.bot_name} - Unified Bot Starting")
         logger.info(f"📱 WebApp URL: {self.webapp_url}")
         logger.info(f"👑 Admins: {self.admin_ids}")
-        logger.info(f"🌐 API: http://localhost:5000/api")
+        logger.info(f"🌐 API: http://0.0.0.0:5000/api")
         logger.info("=" * 60)
         
         # تشغيل Flask في thread منفصل
