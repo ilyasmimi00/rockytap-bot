@@ -18,10 +18,56 @@
             background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
             font-family: 'Cairo', sans-serif;
             min-height: 100vh;
-            padding: 15px;
+            padding: 0;
             padding-bottom: 80px;
         }
         .game-container { max-width: 450px; margin: 0 auto; }
+        
+        .header-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+            z-index: 1000;
+            max-width: 450px;
+            margin: 0 auto;
+            width: 100%;
+            border-radius: 0 !important;
+        }
+        .header-spacer { height: 65px; }
+        
+        .logo-text {
+            background: linear-gradient(135deg, #00BFFF, #00CED1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        .icon-btn { 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            color: #aaa; 
+            margin-left: 15px;
+            background: transparent;
+            border: none;
+        }
+        .icon-btn:hover { color: #00BFFF; transform: scale(1.1); }
+        
+        .lang-btn {
+            background: rgba(0, 191, 255, 0.15);
+            border: 1px solid rgba(0, 191, 255, 0.3);
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #00BFFF;
+            transition: all 0.2s;
+            border-radius: 20px;
+        }
         
         .avatar-custom {
             width: 80px;
@@ -33,14 +79,29 @@
             justify-content: center;
             margin: 0 auto 12px;
             border: 2px solid #00BFFF;
+            box-shadow: 0 0 20px rgba(0, 191, 255, 0.3);
         }
         .avatar-custom i { font-size: 45px; color: #00BFFF; }
-        
+        .username {
+            background: rgba(0, 191, 255, 0.1);
+            padding: 5px 18px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            color: #aaa;
+            display: inline-block;
+        }
         .balance-card {
-            background: linear-gradient(135deg, rgba(0,30,50,0.6), rgba(0,15,30,0.8));
+            background: linear-gradient(135deg, rgba(0, 30, 50, 0.6), rgba(0, 15, 30, 0.8));
             border-radius: 24px;
+            border: 1px solid rgba(0, 191, 255, 0.3);
             padding: 20px;
-            margin-bottom: 20px;
+            margin: 0 16px 20px;
+        }
+        .balance-item {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 12px;
+            text-align: center;
         }
         .balance-value {
             font-size: 28px;
@@ -50,127 +111,336 @@
             background-clip: text;
             color: transparent;
         }
-        
+        .balance-currency { font-size: 12px; color: #00BFFF; font-weight: 600; }
+        .convert-btn {
+            background: linear-gradient(95deg, #0a1a2a, #0a0f1a);
+            border: 1px solid rgba(0, 191, 255, 0.4);
+            border-radius: 60px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+        .convert-btn:hover { border-color: #00BFFF; box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); transform: scale(1.02); }
+        .ads-progress-card {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            padding: 15px;
+            border: 1px solid rgba(0, 191, 255, 0.2);
+            margin: 0 16px 16px 16px;
+        }
+        .progress-title { font-size: 14px; color: #00BFFF; margin-bottom: 10px; }
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            height: 12px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #00BFFF, #00CED1);
+            width: 0%;
+            height: 100%;
+            border-radius: 50px;
+            transition: width 0.5s ease;
+        }
+        .progress-stats { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; margin-top: 8px; gap: 10px; }
+        .stat-item { flex: 1; text-align: center; }
+        .ref-card {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(0, 191, 255, 0.15);
+            transition: all 0.3s;
+            margin-bottom: 16px;
+        }
+        .ref-card:hover { border-color: rgba(0, 191, 255, 0.4); transform: translateY(-3px); }
+        .ref-number { font-size: 28px; font-weight: 800; color: #00BFFF; }
         .action-btn {
             background: linear-gradient(135deg, #0f1a24, #0a0f1a);
-            border: 1px solid rgba(0,191,255,0.25);
+            border: 1px solid rgba(0, 191, 255, 0.25);
             border-radius: 28px;
             padding: 16px 10px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
         }
-        .action-btn:hover { transform: translateY(-3px); border-color: #00BFFF; }
-        .action-btn i { font-size: 32px; display: block; margin-bottom: 8px; color: #00BFFF; }
+        .action-btn:hover { transform: translateY(-3px); border-color: #00BFFF; box-shadow: 0 10px 20px rgba(0, 191, 255, 0.2); }
+        .action-btn i { font-size: 32px; display: block; margin-bottom: 8px; }
         
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
             padding: 10px 20px;
-            border-top: 1px solid rgba(0,191,255,0.2);
+            border-top: 1px solid rgba(0, 191, 255, 0.2);
             max-width: 450px;
             margin: 0 auto;
             width: 100%;
-            display: flex;
-            justify-content: space-around;
+            z-index: 1000;
         }
-        .nav-item {
-            text-align: center;
-            color: #666;
-            cursor: pointer;
-            font-size: 11px;
-        }
+        .nav-item { text-align: center; color: #666; transition: color 0.2s; cursor: pointer; font-size: 11px; }
         .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
         .nav-item.active { color: #00BFFF; }
+        .nav-item:hover { color: #00BFFF; }
         
-        .loading { text-align: center; padding: 40px; color: #aaa; }
+        .scroll-content {
+            overflow-y: auto;
+            height: calc(100vh - 130px);
+            padding: 15px 0;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #00BFFF;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
 
 <div class="game-container">
-    <div class="text-center py-4">
-        <div class="avatar-custom">
-            <i class="fas fa-user-circle"></i>
-        </div>
-        <div class="username mt-2" id="usernameDisplay">
-            <i class="fas fa-at"></i> جاري التحميل...
-        </div>
-    </div>
-    
-    <div class="balance-card">
-        <div class="row text-center">
-            <div class="col-6">
-                <i class="fas fa-coins text-warning fs-2"></i>
-                <div class="balance-value" id="tonBalance">0</div>
-                <div class="small text-secondary">TON</div>
+    <div class="header-custom">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <div class="logo-icon d-flex align-items-center justify-content-center" 
+                     style="width: 38px; height: 38px; background: linear-gradient(135deg, #00BFFF, #0088aa); border-radius: 10px;">
+                    <i class="fas fa-gamepad text-white"></i>
+                </div>
+                <span class="logo-text fw-bold fs-5">RockyTap</span>
             </div>
-            <div class="col-6">
-                <i class="fas fa-star text-info fs-2"></i>
-                <div class="balance-value" id="pointsBalance">0</div>
-                <div class="small text-secondary">نقاط</div>
+            <div class="d-flex gap-3 align-items-center">
+                <button class="lang-btn" onclick="toggleLanguage()">
+                    <i class="fas fa-globe"></i> EN
+                </button>
+                <i class="fas fa-wallet icon-btn" onclick="goTo('withdraw')"></i>
+                <i class="fas fa-bell icon-btn" onclick="showAlert('🔔 لا توجد إشعارات جديدة')"></i>
             </div>
         </div>
     </div>
     
-    <div class="row g-3 mb-4">
-        <div class="col-4">
-            <div class="action-btn" onclick="goTo('tasks')">
-                <i class="fas fa-tasks"></i>
-                <div class="small">المهام</div>
+    <div class="header-spacer"></div>
+    
+    <div class="scroll-content">
+        <div id="home-page">
+            <div class="text-center py-4">
+                <div class="avatar-custom">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="username mt-2" id="usernameDisplay">
+                    <i class="fas fa-at"></i> جاري التحميل...
+                </div>
             </div>
-        </div>
-        <div class="col-4">
-            <div class="action-btn" onclick="goTo('wheel')">
-                <i class="fas fa-gamepad"></i>
-                <div class="small">عجلة</div>
+            
+            <div class="px-3 mb-3">
+                <div class="balance-card">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="balance-item">
+                                <i class="fas fa-coins text-warning fs-2"></i>
+                                <div class="balance-value mt-2" id="tonBalance">0</div>
+                                <div class="balance-currency">TON</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="balance-item">
+                                <i class="fas fa-star text-info fs-2"></i>
+                                <div class="balance-value mt-2" id="pointsBalance">0</div>
+                                <div class="balance-currency">نقاط</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="convert-btn" onclick="openConvertModal()">
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            <i class="fas fa-exchange-alt text-info"></i>
+                            <span class="convert-text fw-bold" style="color: #00BFFF;">تحويل النقاط → تون</span>
+                            <span class="convert-rate small text-secondary">(10 نقاط = 1 تون)</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="col-4">
-            <div class="action-btn" onclick="goTo('ads')">
-                <i class="fas fa-video"></i>
-                <div class="small">إعلانات</div>
+            
+            <div class="ads-progress-card">
+                <div class="progress-title">
+                    <i class="fas fa-video"></i> تقدم مشاهدة الإعلانات
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-fill" id="adsProgressFill" style="width: 0%;"></div>
+                </div>
+                <div class="progress-stats">
+                    <div class="stat-item">📺 تم المشاهدة: <strong id="adsWatched">0</strong></div>
+                    <div class="stat-item">🎯 المتبقي: <strong id="adsRemaining">10</strong></div>
+                    <div class="stat-item">🏆 الهدف: <strong>10</strong></div>
+                </div>
             </div>
-        </div>
-        <div class="col-4">
-            <div class="action-btn" onclick="goTo('referral')">
-                <i class="fas fa-users"></i>
-                <div class="small">إحالات</div>
+            
+            <div class="px-3">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="ref-card">
+                            <i class="fas fa-users text-info fs-1"></i>
+                            <div class="ref-number" id="totalReferrals">0</div>
+                            <div class="small text-secondary">إجمالي الإحالات</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="ref-card">
+                            <i class="fas fa-user-check text-success fs-1"></i>
+                            <div class="ref-number" id="activeReferrals">0</div>
+                            <div class="small text-secondary">إحالات مكتملة</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="col-4">
-            <div class="action-btn" onclick="goTo('giftcode')">
-                <i class="fas fa-gift"></i>
-                <div class="small">أكواد</div>
-            </div>
-        </div>
-        <div class="col-4">
-            <div class="action-btn" onclick="goTo('withdraw')">
-                <i class="fas fa-wallet"></i>
-                <div class="small">سحب</div>
+            
+            <div class="px-3 mb-4 mt-2">
+                <div class="row g-3">
+                    <div class="col-4">
+                        <div class="action-btn text-center" onclick="goTo('giftcode')">
+                            <i class="fas fa-gift text-info"></i>
+                            <div class="small text-white">قيفت كود</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="action-btn text-center" onclick="goTo('referral')">
+                            <i class="fas fa-share-alt text-info"></i>
+                            <div class="small text-white">ريفيرال</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="action-btn text-center" onclick="goTo('tasks')">
+                            <i class="fas fa-tasks text-info"></i>
+                            <div class="small text-white">المهام</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="action-btn text-center" onclick="goTo('wheel')">
+                            <i class="fas fa-gamepad text-info"></i>
+                            <div class="small text-white">عجلة الحظ</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="action-btn text-center" onclick="goTo('ads_posting')">
+                            <i class="fas fa-chart-line text-info"></i>
+                            <div class="small text-white">إعلاناتي</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="action-btn text-center" onclick="goTo('admin')" id="adminBtn" style="display:none;">
+                            <i class="fas fa-crown text-info"></i>
+                            <div class="small text-white">أدمن</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <div class="bottom-nav">
-    <div class="nav-item active" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div>
-    <div class="nav-item" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div>
-    <div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div>
-    <div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div>
-    <div class="nav-item" onclick="goTo('admin')" id="adminNavBtn" style="display:none;"><i class="fas fa-crown"></i><div>أدمن</div></div>
+    <div class="row text-center">
+        <div class="col"><div class="nav-item active" onclick="goTo('home')"><i class="fas fa-home"></i><div>الرئيسية</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('tasks')"><i class="fas fa-tasks"></i><div>المهام</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('wheel')"><i class="fas fa-gamepad"></i><div>عجلة</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('ads')"><i class="fas fa-video"></i><div>إعلانات</div></div></div>
+        <div class="col"><div class="nav-item" onclick="goTo('admin')" id="adminNavBtn" style="display:none;"><i class="fas fa-crown"></i><div>أدمن</div></div></div>
+    </div>
+</div>
+
+<!-- نافذة تحويل النقاط -->
+<div id="convertModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.95); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:#0A0F1A; border:2px solid #00BFFF; border-radius:24px; padding:24px; width:90%; max-width:350px;">
+        <h3 style="color:#00BFFF; margin-bottom:20px;">🔄 تحويل النقاط</h3>
+        <div class="mb-3">
+            <label style="color:#aaa;">عدد النقاط (الحد الأدنى 10)</label>
+            <input type="number" id="convertPoints" class="form-control" style="background:#000; color:white; border:1px solid #00BFFF;" min="10" step="10">
+        </div>
+        <div class="mb-3" id="convertPreview" style="color:#FFD700;"></div>
+        <button class="btn btn-primary w-100 mb-2" onclick="doConvert()" style="background:#00BFFF;">تحويل</button>
+        <button class="btn btn-secondary w-100" onclick="closeConvertModal()">إلغاء</button>
+    </div>
 </div>
 
 <script>
+    let tg = null;
+    let currentUserId = null;
+    let currentUserData = null;
     const ADMIN_IDS = [8268443100];
+    
+    // دالة لتحديث عرض الرصيد عند استقبال رسالة
+    function updateBalanceDisplay(points, ton) {
+        if (points !== undefined && points !== null) {
+            document.getElementById('pointsBalance').innerText = Math.floor(points);
+        }
+        if (ton !== undefined && ton !== null) {
+            document.getElementById('tonBalance').innerText = parseFloat(ton).toFixed(4);
+        }
+    }
+    
+    // تهيئة WebApp
+    function init() {
+        tg = initWebApp();
+        let user = getUser();
+        if (user) {
+            currentUserId = user.id;
+            document.getElementById('usernameDisplay').innerHTML = '<i class="fas fa-at"></i> ' + (user.username || user.first_name || 'مستخدم');
+        }
+        
+        // التحقق من صلاحيات الأدمن
+        checkAdminStatus();
+        
+        // تحميل البيانات
+        loadUserData();
+        
+        // تحديث كل 30 ثانية
+        setInterval(loadUserData, 30000);
+    }
+    
+    async function checkAdminStatus() {
+        try {
+            if (ADMIN_IDS.includes(currentUserId)) {
+                document.getElementById('adminBtn').style.display = 'block';
+                document.getElementById('adminNavBtn').style.display = 'block';
+            }
+        } catch(e) {}
+    }
     
     async function loadUserData() {
         currentUserId = window.currentUserId || (window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
         if (!currentUserId) {
             currentUserId = 8268443100;
+        }
+        
+        // في وضع Demo Mode، استخدم localStorage أولاً
+        if (window.DEMO_MODE) {
+            let localBalance = getLocalBalance(currentUserId);
+            if (localBalance.points > 0 || localBalance.ton > 0) {
+                document.getElementById('tonBalance').innerText = localBalance.ton.toFixed(4);
+                document.getElementById('pointsBalance').innerText = localBalance.points;
+            }
         }
         
         try {
@@ -179,6 +449,14 @@
                 document.getElementById('tonBalance').innerText = result.ton.toFixed(4);
                 document.getElementById('pointsBalance').innerText = Math.floor(result.points);
                 document.getElementById('usernameDisplay').innerHTML = '<i class="fas fa-at"></i> ' + (result.username || 'مستخدم');
+                if (result.total_referrals !== undefined) {
+                    document.getElementById('totalReferrals').innerText = result.total_referrals;
+                }
+                
+                // حفظ في localStorage للمزامنة
+                if (window.updateLocalBalance) {
+                    window.updateLocalBalance(currentUserId, result.points, result.ton);
+                }
             }
         } catch(e) {
             console.error('Error loading user:', e);
@@ -190,8 +468,104 @@
         }
     }
     
-    loadUserData();
-    setInterval(loadUserData, 30000);
+    function openConvertModal() {
+        document.getElementById('convertModal').style.display = 'flex';
+        document.getElementById('convertPoints').value = '';
+        document.getElementById('convertPreview').innerHTML = '';
+        
+        document.getElementById('convertPoints').oninput = function() {
+            let points = parseInt(this.value) || 0;
+            let ton = points / 10;
+            document.getElementById('convertPreview').innerHTML = `ستحصل على: ${ton.toFixed(4)} تون`;
+        };
+    }
+    
+    function closeConvertModal() {
+        document.getElementById('convertModal').style.display = 'none';
+    }
+    
+    async function doConvert() {
+        let points = parseInt(document.getElementById('convertPoints').value);
+        
+        if (!points || points < 10) {
+            showAlert('⚠️ الحد الأدنى للتحويل هو 10 نقاط');
+            return;
+        }
+        
+        showAlert('🔍 جاري التحويل...');
+        
+        try {
+            const result = await convertPoints(currentUserId, points);
+            
+            if (result && result.success) {
+                showAlert(`✅ تم تحويل ${points} نقطة إلى ${result.ton.toFixed(4)} تون`);
+                closeConvertModal();
+                loadUserData();
+            } else {
+                showAlert('❌ ' + (result?.message || 'حدث خطأ'));
+            }
+        } catch(e) {
+            showAlert('❌ حدث خطأ في التحويل');
+        }
+    }
+    
+    function goTo(page) {
+        const pages = {
+            'home': 'index.html',
+            'tasks': 'tasks.html',
+            'wheel': 'wheel.html',
+            'ads': 'ads.html',
+            'ads_posting': 'ads_posting.html',
+            'withdraw': 'withdraw.html',
+            'referral': 'referral.html',
+            'giftcode': 'giftcode.html',
+            'admin': 'admin.html'
+        };
+        
+        if (pages[page]) {
+            window.location.href = pages[page];
+        }
+    }
+    
+    function toggleLanguage() {
+        let btn = document.querySelector('.lang-btn');
+        if (btn.innerHTML.includes('EN')) {
+            btn.innerHTML = '<i class="fas fa-globe"></i> عربي';
+        } else {
+            btn.innerHTML = '<i class="fas fa-globe"></i> EN';
+        }
+    }
+    
+    // استقبال تحديثات الرصيد من الصفحات الأخرى (مثل wheel.html)
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'UPDATE_BALANCE') {
+            console.log('📨 Index received balance update:', event.data);
+            if (event.data.points !== undefined) {
+                document.getElementById('pointsBalance').innerText = Math.floor(event.data.points);
+                // تحديث localStorage
+                if (window.updateLocalBalance) {
+                    window.updateLocalBalance(currentUserId, event.data.points, null);
+                }
+            }
+            if (event.data.ton !== undefined) {
+                document.getElementById('tonBalance').innerText = event.data.ton.toFixed(4);
+                if (window.updateLocalBalance) {
+                    window.updateLocalBalance(currentUserId, null, event.data.ton);
+                }
+            }
+        }
+    });
+    
+    // بدء التشغيل
+    init();
+    
+    // دوال عامة
+    window.goTo = goTo;
+    window.toggleLanguage = toggleLanguage;
+    window.openConvertModal = openConvertModal;
+    window.closeConvertModal = closeConvertModal;
+    window.doConvert = doConvert;
+    window.updateBalanceDisplay = updateBalanceDisplay;
 </script>
 
 </body>

@@ -1,5 +1,5 @@
 // public/config.js
-// إعدادات الواجهة الأمامية - مع Demo Mode
+// إعدادات الواجهة الأمامية - مع Demo Mode ودوال الرصيد الموحد
 
 // ==================== إعدادات التطبيق ====================
 
@@ -15,6 +15,76 @@ const APP_URL = 'https://rockytap-bot.elias-guerbas.workers.dev';
 // اسم البوت
 const BOT_USERNAME = 'RockyTap_bot';
 
+// ==================== دوال الرصيد الموحد ====================
+
+// حفظ الرصيد في localStorage
+function updateLocalBalance(userId, points, ton) {
+    if (points !== undefined && points !== null) {
+        localStorage.setItem(`points_${userId}`, points);
+        console.log(`💾 Updated points: ${points}`);
+    }
+    if (ton !== undefined && ton !== null) {
+        localStorage.setItem(`ton_${userId}`, ton);
+        console.log(`💾 Updated TON: ${ton}`);
+    }
+}
+
+// الحصول على الرصيد من localStorage
+function getLocalBalance(userId) {
+    return {
+        points: parseInt(localStorage.getItem(`points_${userId}`)) || 0,
+        ton: parseFloat(localStorage.getItem(`ton_${userId}`)) || 0
+    };
+}
+
+// إضافة نقاط إلى الرصيد المحلي
+function addLocalPoints(userId, points) {
+    let current = getLocalBalance(userId);
+    let newPoints = current.points + points;
+    updateLocalBalance(userId, newPoints, null);
+    
+    // إرسال إشعار للصفحة الرئيسية إذا كانت مفتوحة
+    if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ 
+            type: 'UPDATE_BALANCE', 
+            points: newPoints,
+            ton: current.ton
+        }, '*');
+    }
+    
+    // إرسال إشعار لأي نافذة أخرى في نفس التطبيق
+    window.postMessage({ 
+        type: 'UPDATE_BALANCE', 
+        points: newPoints,
+        ton: current.ton
+    }, '*');
+    
+    return newPoints;
+}
+
+// إضافة تون إلى الرصيد المحلي
+function addLocalTon(userId, ton) {
+    let current = getLocalBalance(userId);
+    let newTon = current.ton + ton;
+    updateLocalBalance(userId, null, newTon);
+    
+    if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ 
+            type: 'UPDATE_BALANCE', 
+            points: current.points,
+            ton: newTon
+        }, '*');
+    }
+    
+    window.postMessage({ 
+        type: 'UPDATE_BALANCE', 
+        points: current.points,
+        ton: newTon
+    }, '*');
+    
+    return newTon;
+}
+
 // ==================== دوال API مع دعم Demo Mode ====================
 
 async function apiCall(endpoint, data = null, method = 'GET') {
@@ -22,14 +92,15 @@ async function apiCall(endpoint, data = null, method = 'GET') {
     if (DEMO_MODE) {
         console.log(`📡 DEMO MODE: ${method} ${endpoint}`);
         
-        // بيانات وهمية للمستخدم
+        // بيانات وهمية للمستخدم (تجلب من localStorage إذا وجدت)
         if (endpoint.includes('users/me')) {
+            let localBalance = getLocalBalance(8268443100);
             return {
                 success: true,
                 user_id: 8268443100,
                 username: 'مستخدم تجريبي',
-                ton: 1.2345,
-                points: 567,
+                ton: localBalance.ton || 1.2345,
+                points: localBalance.points || 567,
                 total_referrals: 3,
                 is_blocked: false
             };
@@ -79,15 +150,18 @@ async function apiCall(endpoint, data = null, method = 'GET') {
         
         // إكمال مهمة
         if (endpoint.includes('tasks/complete')) {
+            let reward = 100;
+            let newPoints = addLocalPoints(8268443100, reward);
             return {
                 success: true,
-                message: '✅ تم إكمال المهمة بنجاح!',
-                new_points: 667
+                message: `✅ +${reward} نقطة!`,
+                new_points: newPoints
             };
         }
         
         // بيانات وهمية للإعلانات
         if (endpoint.includes('ads/list')) {
+            let watchedToday = parseInt(localStorage.getItem(`ads_watched_${8268443100}`)) || 0;
             return {
                 success: true,
                 ads: [
@@ -96,39 +170,67 @@ async function apiCall(endpoint, data = null, method = 'GET') {
                     { id: 3, name: "GigaBI Display", reward: 15, icon: "🖥️" },
                     { id: 4, name: "شركة 4", reward: 15, icon: "📱" }
                 ],
-                watched_today: 3,
+                watched_today: watchedToday,
                 daily_limit: 10
             };
         }
         
         // مشاهدة إعلان
         if (endpoint.includes('ads/watch')) {
+            let reward = 15;
+            let watchedToday = parseInt(localStorage.getItem(`ads_watched_${8268443100}`)) || 0;
+            
+            if (watchedToday >= 10) {
+                return {
+                    success: false,
+                    message: '⚠️ لقد وصلت للحد اليومي للإعلانات!'
+                };
+            }
+            
+            let newPoints = addLocalPoints(8268443100, reward);
+            localStorage.setItem(`ads_watched_${8268443100}`, watchedToday + 1);
+            
             return {
                 success: true,
-                reward: 15,
-                new_points: 582,
-                remaining: 6
+                reward: reward,
+                new_points: newPoints,
+                remaining: 9 - watchedToday
             };
         }
         
         // بيانات وهمية لعجلة الحظ
         if (endpoint.includes('wheel/status')) {
+            let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${8268443100}`)) || 0;
+            let remaining = Math.max(0, 3 - todaySpins);
             return {
                 success: true,
-                remaining_spins: 3,
-                total_points: 567
+                remaining_spins: remaining,
+                total_points: getLocalBalance(8268443100).points
             };
         }
         
         // لعب عجلة الحظ
         if (endpoint.includes('wheel/spin')) {
+            let todaySpins = parseInt(localStorage.getItem(`wheel_spins_${8268443100}`)) || 0;
+            
+            if (todaySpins >= 3) {
+                return {
+                    success: false,
+                    message: '⚠️ لقد استنفدت جميع محاولاتك اليوم!'
+                };
+            }
+            
             const rewards = [5, 10, 15, 20, 25, 50, 75, 100];
             const reward = rewards[Math.floor(Math.random() * rewards.length)];
+            
+            let newPoints = addLocalPoints(8268443100, reward);
+            localStorage.setItem(`wheel_spins_${8268443100}`, todaySpins + 1);
+            
             return {
                 success: true,
                 reward: reward,
-                new_points: 567 + reward,
-                remaining: 2
+                new_points: newPoints,
+                remaining: 2 - todaySpins
             };
         }
         
@@ -136,11 +238,18 @@ async function apiCall(endpoint, data = null, method = 'GET') {
         if (endpoint.includes('wallet/convert')) {
             const points = data?.points || 0;
             const ton = points / 10;
+            
+            let current = getLocalBalance(8268443100);
+            let newPoints = current.points - points;
+            let newTon = current.ton + ton;
+            
+            updateLocalBalance(8268443100, newPoints, newTon);
+            
             return {
                 success: true,
                 message: `تم تحويل ${points} نقطة إلى ${ton.toFixed(4)} تون`,
-                ton: 1.2345 + ton,
-                points: 567 - points
+                ton: newTon,
+                points: newPoints
             };
         }
         
@@ -150,30 +259,31 @@ async function apiCall(endpoint, data = null, method = 'GET') {
                 success: true,
                 withdrawal_id: Date.now(),
                 amount: data?.amount,
-                new_balance: 1.2345 - (data?.amount || 0),
+                new_balance: getLocalBalance(8268443100).ton - (data?.amount || 0),
                 message: '✅ تم إرسال طلب السحب بنجاح'
             };
         }
         
         // سجل السحوبات
         if (endpoint.includes('wallet/withdrawals')) {
+            let withdrawals = JSON.parse(localStorage.getItem(`withdrawals_${8268443100}`) || '[]');
             return {
                 success: true,
-                withdrawals: [
-                    { id: 1, amount: 0.05, wallet_address: "UQ...", status: "completed", requested_at: "2024-01-15" },
-                    { id: 2, amount: 0.10, wallet_address: "UQ...", status: "pending", requested_at: "2024-01-20" }
-                ]
+                withdrawals: withdrawals
             };
         }
         
         // تفعيل كود
         if (endpoint.includes('giftcode/redeem')) {
+            let reward = 100;
+            let newPoints = addLocalPoints(8268443100, reward);
+            
             return {
                 success: true,
-                reward_points: 100,
-                reward_ton: 0.01,
-                new_points: 667,
-                new_ton: 1.2445,
+                reward_points: reward,
+                reward_ton: 0,
+                new_points: newPoints,
+                new_ton: getLocalBalance(8268443100).ton,
                 message: '✅ تم تفعيل الكود بنجاح!'
             };
         }
@@ -368,6 +478,23 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📍 DEMO_MODE:', DEMO_MODE);
     console.log('📍 API_URL:', API_URL);
     console.log('📍 Current User:', currentUserId);
+    
+    // استقبال رسائل تحديث الرصيد من الصفحات الأخرى
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'UPDATE_BALANCE') {
+            console.log('📨 Received balance update:', event.data);
+            if (event.data.points !== undefined) {
+                localStorage.setItem(`points_${currentUserId}`, event.data.points);
+            }
+            if (event.data.ton !== undefined) {
+                localStorage.setItem(`ton_${currentUserId}`, event.data.ton);
+            }
+            // تحديث الواجهة إذا كانت الدوال موجودة
+            if (typeof updateBalanceDisplay === 'function') {
+                updateBalanceDisplay(event.data.points, event.data.ton);
+            }
+        }
+    });
 });
 
 // تصدير الدوال
@@ -393,3 +520,7 @@ window.goBack = goBack;
 window.initTelegram = initTelegram;
 window.formatNumber = formatNumber;
 window.formatDate = formatDate;
+window.updateLocalBalance = updateLocalBalance;
+window.getLocalBalance = getLocalBalance;
+window.addLocalPoints = addLocalPoints;
+window.addLocalTon = addLocalTon;

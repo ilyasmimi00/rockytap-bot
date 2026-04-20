@@ -18,10 +18,56 @@
             background: linear-gradient(135deg, #0A0F1A 0%, #05080F 100%);
             font-family: 'Cairo', sans-serif;
             min-height: 100vh;
-            padding: 15px;
+            padding: 0;
             padding-bottom: 80px;
         }
         .game-container { max-width: 450px; margin: 0 auto; }
+        
+        .header-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+            z-index: 1000;
+            max-width: 450px;
+            margin: 0 auto;
+            width: 100%;
+            border-radius: 0 !important;
+        }
+        .header-spacer { height: 65px; }
+        
+        .logo-text {
+            background: linear-gradient(135deg, #00BFFF, #00CED1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        .icon-btn { 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            color: #aaa; 
+            margin-left: 15px;
+            background: transparent;
+            border: none;
+        }
+        .icon-btn:hover { color: #00BFFF; transform: scale(1.1); }
+        
+        .lang-btn {
+            background: rgba(0, 191, 255, 0.15);
+            border: 1px solid rgba(0, 191, 255, 0.3);
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #00BFFF;
+            transition: all 0.2s;
+            border-radius: 20px;
+        }
         
         .page-title { text-align: center; padding: 20px; color: #00BFFF; font-size: 24px; font-weight: 800; }
         
@@ -54,30 +100,35 @@
         .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
         .stats-card {
-            background: linear-gradient(135deg, rgba(0,30,50,0.6), rgba(0,15,30,0.8));
+            background: linear-gradient(135deg, rgba(0, 30, 50, 0.6), rgba(0, 15, 30, 0.8));
             border-radius: 20px;
             padding: 15px;
-            margin: 20px 0;
+            margin: 0 16px 16px;
             text-align: center;
         }
         .stats-value { font-size: 28px; font-weight: 800; color: #FFD700; }
         
         .last-result {
-            background: rgba(0,0,0,0.4);
+            background: rgba(0, 0, 0, 0.4);
             border-radius: 16px;
             padding: 12px;
-            margin: 15px 0;
+            margin: 0 16px 20px;
             text-align: center;
         }
+        
+        .rewards-list { margin: 20px 16px; }
+        .rewards-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .reward-badge { background: rgba(0,0,0,0.4); border-radius: 50px; padding: 6px 12px; font-size: 12px; border: 1px solid rgba(0,191,255,0.2); color: #FFD700; }
         
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
             padding: 10px 20px;
-            border-top: 1px solid rgba(0,191,255,0.2);
+            border-top: 1px solid rgba(0, 191, 255, 0.2);
             max-width: 450px;
             margin: 0 auto;
             width: 100%;
@@ -92,26 +143,58 @@
         }
         .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
         .nav-item.active { color: #00BFFF; }
+        
+        .scroll-content {
+            overflow-y: auto;
+            height: calc(100vh - 130px);
+            padding: 15px 0;
+        }
     </style>
 </head>
 <body>
 
 <div class="game-container">
-    <div class="page-title">🎡 عجلة الحظ</div>
-    
-    <div class="wheel-wrapper">
-        <div class="pointer"></div>
-        <canvas id="wheelCanvas" width="500" height="500"></canvas>
+    <div class="header-custom">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <div class="logo-icon d-flex align-items-center justify-content-center" 
+                     style="width: 38px; height: 38px; background: linear-gradient(135deg, #00BFFF, #0088aa); border-radius: 10px;">
+                    <i class="fas fa-gamepad text-white"></i>
+                </div>
+                <span class="logo-text fw-bold fs-5">RockyTap</span>
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <button class="lang-btn" onclick="toggleLanguage()"><i class="fas fa-globe"></i> EN</button>
+                <i class="fas fa-wallet icon-btn" onclick="goTo('withdraw')"></i>
+                <i class="fas fa-bell icon-btn" onclick="showAlert('🔔 لا توجد إشعارات جديدة')"></i>
+            </div>
+        </div>
     </div>
     
-    <button class="spin-btn" id="spinBtn" onclick="spinWheel()">🔄 ابدأ اللعب</button>
+    <div class="header-spacer"></div>
     
-    <div class="stats-card">
-        <div>المحاولات المتبقية اليوم</div>
-        <div class="stats-value" id="remainingSpins">--</div>
+    <div class="scroll-content">
+        <div class="page-title">🎡 عجلة الحظ</div>
+        
+        <div class="wheel-wrapper">
+            <div class="pointer"></div>
+            <canvas id="wheelCanvas" width="500" height="500"></canvas>
+        </div>
+        
+        <button class="spin-btn" id="spinBtn" onclick="spinWheel()">🔄 ابدأ اللعب</button>
+        
+        <div class="stats-card">
+            <div>المحاولات المتبقية اليوم</div>
+            <div class="stats-value" id="remainingSpins">--</div>
+        </div>
+        
+        <div class="last-result" id="lastResult">🎲 لم تلعب بعد</div>
+        
+        <div class="rewards-list">
+            <div style="font-size:16px;font-weight:bold;color:#00BFFF;margin-bottom:10px;">🎁 قائمة الجوائز</div>
+            <div class="rewards-grid" id="rewardsGrid"></div>
+        </div>
     </div>
-    
-    <div class="last-result" id="lastResult">🎲 لم تلعب بعد</div>
 </div>
 
 <div class="bottom-nav">
@@ -123,6 +206,7 @@
 </div>
 
 <script>
+    // currentUserId معرف في config.js
     let remainingSpins = 0;
     let spinning = false;
     let currentAngle = 0;
@@ -140,25 +224,28 @@
         { name: "75", value: 75, color: "#F7B787" }
     ];
     
-    async function init() {
+    function init() {
         currentUserId = window.currentUserId;
         if (!currentUserId) {
             currentUserId = 8268443100;
         }
         
         initCanvas();
-        await loadWheelData();
+        renderRewards();
+        loadWheelData();
     }
     
     async function loadWheelData() {
         try {
             const result = await getWheelStatus(currentUserId);
+            
             if (result && result.success) {
                 remainingSpins = result.remaining_spins || 0;
+                updateDisplay();
             } else {
                 remainingSpins = 3;
+                updateDisplay();
             }
-            updateDisplay();
         } catch(e) {
             console.error('Error loading wheel data:', e);
             remainingSpins = 3;
@@ -169,6 +256,7 @@
     function updateDisplay() {
         const remainingEl = document.getElementById('remainingSpins');
         const spinBtn = document.getElementById('spinBtn');
+        
         if (remainingEl) remainingEl.innerText = remainingSpins;
         if (spinBtn) spinBtn.disabled = remainingSpins <= 0;
     }
@@ -228,6 +316,18 @@
         ctx.stroke();
     }
     
+    function renderRewards() {
+        const container = document.getElementById('rewardsGrid');
+        if (!container) return;
+        container.innerHTML = '';
+        segments.forEach(seg => {
+            const badge = document.createElement('div');
+            badge.className = 'reward-badge';
+            badge.innerHTML = `🎁 ${seg.name} نقطة`;
+            container.appendChild(badge);
+        });
+    }
+    
     async function spinWheel() {
         if (spinning) return;
         if (remainingSpins <= 0) {
@@ -262,7 +362,8 @@
             } else {
                 currentAngle = newAngle % (Math.PI * 2);
                 drawWheel();
-                claimReward(segments[randomIndex].value);
+                const reward = segments[randomIndex].value;
+                claimReward(reward);
             }
         }
         
@@ -277,6 +378,15 @@
                 remainingSpins = result.remaining;
                 updateDisplay();
                 
+                // ✅ تحديث localStorage
+                if (typeof addLocalPoints === 'function') {
+                    addLocalPoints(currentUserId, reward);
+                } else {
+                    let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`)) || 0;
+                    currentPoints += reward;
+                    localStorage.setItem(`points_${currentUserId}`, currentPoints);
+                }
+                
                 const lastResult = document.getElementById('lastResult');
                 if (lastResult) {
                     lastResult.innerHTML = `🎉 مبروك! ربحت ${reward} نقطة! 🎉`;
@@ -286,6 +396,16 @@
                 // محاكاة للاختبار
                 remainingSpins--;
                 updateDisplay();
+                
+                // ✅ تحديث localStorage
+                if (typeof addLocalPoints === 'function') {
+                    addLocalPoints(currentUserId, reward);
+                } else {
+                    let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`)) || 0;
+                    currentPoints += reward;
+                    localStorage.setItem(`points_${currentUserId}`, currentPoints);
+                }
+                
                 const lastResult = document.getElementById('lastResult');
                 if (lastResult) {
                     lastResult.innerHTML = `🎉 مبروك! ربحت ${reward} نقطة! 🎉`;
@@ -296,6 +416,16 @@
             console.error('Error claiming reward:', e);
             remainingSpins--;
             updateDisplay();
+            
+            // ✅ تحديث localStorage
+            if (typeof addLocalPoints === 'function') {
+                addLocalPoints(currentUserId, reward);
+            } else {
+                let currentPoints = parseInt(localStorage.getItem(`points_${currentUserId}`)) || 0;
+                currentPoints += reward;
+                localStorage.setItem(`points_${currentUserId}`, currentPoints);
+            }
+            
             showAlert(`🎡 مبروك! ربحت ${reward} نقطة!`);
         }
         
@@ -306,8 +436,40 @@
         }
     }
     
-    window.addEventListener('resize', function() { if (canvas) initCanvas(); });
+    function toggleLanguage() {
+        let btn = document.querySelector('.lang-btn');
+        if (btn.innerHTML.includes('EN')) {
+            btn.innerHTML = '<i class="fas fa-globe"></i> عربي';
+        } else {
+            btn.innerHTML = '<i class="fas fa-globe"></i> EN';
+        }
+    }
+    
+    function goTo(page) {
+        const pages = {
+            'home': 'index.html',
+            'tasks': 'tasks.html',
+            'wheel': 'wheel.html',
+            'ads': 'ads.html',
+            'withdraw': 'withdraw.html',
+            'referral': 'referral.html',
+            'giftcode': 'giftcode.html',
+            'admin': 'admin.html'
+        };
+        if (pages[page]) {
+            window.location.href = pages[page];
+        }
+    }
+    
+    window.addEventListener('resize', function() { 
+        if (canvas) initCanvas();
+    });
+    
     init();
+    
+    window.spinWheel = spinWheel;
+    window.toggleLanguage = toggleLanguage;
+    window.goTo = goTo;
 </script>
 
 </body>
