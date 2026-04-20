@@ -1,9 +1,12 @@
-// frontend/config.js
-// إعدادات الواجهة الأمامية - متصلة بالـ API الجديد
+// public/config.js
+// إعدادات الواجهة الأمامية - مع Demo Mode
 
 // ==================== إعدادات التطبيق ====================
 
-// رابط API الخلفي (VPS)
+// تفعيل الوضع التجريبي (يعرض بيانات وهمية بدلاً من الاتصال بالخادم)
+const DEMO_MODE = true;
+
+// رابط API الخلفي (VPS) - يستخدم فقط عندما يكون DEMO_MODE = false
 const API_URL = 'http://158.220.120.209:5000/api';
 
 // رابط التطبيق على Cloudflare
@@ -12,9 +15,192 @@ const APP_URL = 'https://rockytap-bot.elias-guerbas.workers.dev';
 // اسم البوت
 const BOT_USERNAME = 'RockyTap_bot';
 
-// ==================== دوال API ====================
+// ==================== دوال API مع دعم Demo Mode ====================
 
 async function apiCall(endpoint, data = null, method = 'GET') {
+    // ========== الوضع التجريبي: عرض بيانات وهمية ==========
+    if (DEMO_MODE) {
+        console.log(`📡 DEMO MODE: ${method} ${endpoint}`);
+        
+        // بيانات وهمية للمستخدم
+        if (endpoint.includes('users/me')) {
+            return {
+                success: true,
+                user_id: 8268443100,
+                username: 'مستخدم تجريبي',
+                ton: 1.2345,
+                points: 567,
+                total_referrals: 3,
+                is_blocked: false
+            };
+        }
+        
+        // بيانات وهمية للمهام
+        if (endpoint.includes('tasks/list')) {
+            return {
+                success: true,
+                tasks: [
+                    { 
+                        id: 1, 
+                        title: "قناة RockyTap", 
+                        description: "اشترك في قناتنا الرسمية",
+                        icon: "📺", 
+                        channel_link: "https://t.me/RockyTap", 
+                        channel_username: "@RockyTap",
+                        reward_points: 100, 
+                        reward_ton: 0, 
+                        user_status: "available" 
+                    },
+                    { 
+                        id: 2, 
+                        title: "قناة الأخبار", 
+                        description: "تابع آخر الأخبار",
+                        icon: "📰", 
+                        channel_link: "https://t.me/CryptoNews", 
+                        channel_username: "@CryptoNews",
+                        reward_points: 150, 
+                        reward_ton: 0.01, 
+                        user_status: "available" 
+                    },
+                    { 
+                        id: 3, 
+                        title: "مجموعة المناقشات", 
+                        description: "انضم إلى مجموعتنا",
+                        icon: "👥", 
+                        channel_link: "https://t.me/RockyTapGroup", 
+                        channel_username: "@RockyTapGroup",
+                        reward_points: 200, 
+                        reward_ton: 0, 
+                        user_status: "available" 
+                    }
+                ]
+            };
+        }
+        
+        // إكمال مهمة
+        if (endpoint.includes('tasks/complete')) {
+            return {
+                success: true,
+                message: '✅ تم إكمال المهمة بنجاح!',
+                new_points: 667
+            };
+        }
+        
+        // بيانات وهمية للإعلانات
+        if (endpoint.includes('ads/list')) {
+            return {
+                success: true,
+                ads: [
+                    { id: 1, name: "AdsGram", reward: 15, icon: "📺" },
+                    { id: 2, name: "MontageWeb", reward: 15, icon: "🎬" },
+                    { id: 3, name: "GigaBI Display", reward: 15, icon: "🖥️" },
+                    { id: 4, name: "شركة 4", reward: 15, icon: "📱" }
+                ],
+                watched_today: 3,
+                daily_limit: 10
+            };
+        }
+        
+        // مشاهدة إعلان
+        if (endpoint.includes('ads/watch')) {
+            return {
+                success: true,
+                reward: 15,
+                new_points: 582,
+                remaining: 6
+            };
+        }
+        
+        // بيانات وهمية لعجلة الحظ
+        if (endpoint.includes('wheel/status')) {
+            return {
+                success: true,
+                remaining_spins: 3,
+                total_points: 567
+            };
+        }
+        
+        // لعب عجلة الحظ
+        if (endpoint.includes('wheel/spin')) {
+            const rewards = [5, 10, 15, 20, 25, 50, 75, 100];
+            const reward = rewards[Math.floor(Math.random() * rewards.length)];
+            return {
+                success: true,
+                reward: reward,
+                new_points: 567 + reward,
+                remaining: 2
+            };
+        }
+        
+        // تحويل النقاط
+        if (endpoint.includes('wallet/convert')) {
+            const points = data?.points || 0;
+            const ton = points / 10;
+            return {
+                success: true,
+                message: `تم تحويل ${points} نقطة إلى ${ton.toFixed(4)} تون`,
+                ton: 1.2345 + ton,
+                points: 567 - points
+            };
+        }
+        
+        // طلب سحب
+        if (endpoint.includes('wallet/withdraw')) {
+            return {
+                success: true,
+                withdrawal_id: Date.now(),
+                amount: data?.amount,
+                new_balance: 1.2345 - (data?.amount || 0),
+                message: '✅ تم إرسال طلب السحب بنجاح'
+            };
+        }
+        
+        // سجل السحوبات
+        if (endpoint.includes('wallet/withdrawals')) {
+            return {
+                success: true,
+                withdrawals: [
+                    { id: 1, amount: 0.05, wallet_address: "UQ...", status: "completed", requested_at: "2024-01-15" },
+                    { id: 2, amount: 0.10, wallet_address: "UQ...", status: "pending", requested_at: "2024-01-20" }
+                ]
+            };
+        }
+        
+        // تفعيل كود
+        if (endpoint.includes('giftcode/redeem')) {
+            return {
+                success: true,
+                reward_points: 100,
+                reward_ton: 0.01,
+                new_points: 667,
+                new_ton: 1.2445,
+                message: '✅ تم تفعيل الكود بنجاح!'
+            };
+        }
+        
+        // إحصائيات الإحالات
+        if (endpoint.includes('referrals/stats')) {
+            return {
+                success: true,
+                total: 3,
+                granted: 2,
+                pending: 1,
+                total_points_earned: 200,
+                total_ton_earned: 0.02,
+                referral_link: `https://t.me/${BOT_USERNAME}?start=ref_8268443100`,
+                referrals: [
+                    { username: "user1", date: "2024-01-10", status: "مكتمل", reward_points: 100, reward_ton: 0.01 },
+                    { username: "user2", date: "2024-01-15", status: "مكتمل", reward_points: 100, reward_ton: 0.01 },
+                    { username: "user3", date: "2024-01-20", status: "قيد الانتظار", reward_points: 100, reward_ton: 0.01 }
+                ]
+            };
+        }
+        
+        // أي طلب آخر
+        return { success: true, message: 'DEMO MODE: تم استلام الطلب' };
+    }
+    
+    // ========== الوضع الحقيقي: الاتصال بالخادم ==========
     const url = `${API_URL}/${endpoint}`;
     const options = {
         method: method,
@@ -158,17 +344,35 @@ function goTo(page) {
     }
 }
 
+function goBack() {
+    window.history.back();
+}
+
+// ==================== دوال مساعدة ====================
+
+function formatNumber(number, decimals = 4) {
+    return parseFloat(number).toFixed(decimals);
+}
+
+function formatDate(date) {
+    if (!date) return '';
+    let d = new Date(date);
+    return d.toLocaleDateString('ar-EG');
+}
+
 // ==================== التهيئة ====================
 
 document.addEventListener('DOMContentLoaded', function() {
     initTelegram();
     console.log('✅ Config.js loaded');
+    console.log('📍 DEMO_MODE:', DEMO_MODE);
     console.log('📍 API_URL:', API_URL);
     console.log('📍 Current User:', currentUserId);
 });
 
 // تصدير الدوال
 window.API_URL = API_URL;
+window.DEMO_MODE = DEMO_MODE;
 window.getUserData = getUserData;
 window.getReferralStats = getReferralStats;
 window.getTasks = getTasks;
@@ -185,4 +389,7 @@ window.sendToBot = sendToBot;
 window.showAlert = showAlert;
 window.showConfirm = showConfirm;
 window.goTo = goTo;
+window.goBack = goBack;
 window.initTelegram = initTelegram;
+window.formatNumber = formatNumber;
+window.formatDate = formatDate;
